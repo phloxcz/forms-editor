@@ -1,0 +1,1383 @@
+/*!
+ * Nette WYSIWYG Editor — styles
+ * Bootstrap 5.3 Grid Support
+ */
+
+.phx-editor-wrapper {
+  /* Všechny --phx-editor-* proměnné jsou scopované na wrapper —
+     Bootstrap dark theme (data-bs-theme="dark" na body/předku) je nemůže přebít */
+  --phx-editor-tb-bg:       #f5f6fa;
+  --phx-editor-tb-btn:      #eaecf4;
+  --phx-editor-tb-hover:    #dde0ee;
+  --phx-editor-tb-active:   #4f6ef7;
+  --phx-editor-tb-text:     #2d3349;
+  --phx-editor-tb-sep:      rgba(0,0,0,0.12);
+  --phx-editor-tb-border:    rgba(0,0,0,0.12);
+  --phx-editor-tb-hover-text:  #1a1e2e;
+  --phx-editor-tb-active-text:  #ffffff;
+  --phx-editor-source-bg:       #f8f9fc;
+  --phx-editor-source-text:     #1a1e2e;
+  --phx-editor-float-bg:        #ffffff;
+  --phx-editor-float-border:    rgba(0,0,0,0.12);
+  --phx-editor-float-shadow:    0 6px 28px rgba(0,0,0,0.14);
+  --phx-editor-float-label:     rgba(60,70,100,0.55);
+  --phx-editor-float-sep:       rgba(0,0,0,0.09);
+  --phx-editor-ed-bg:       #ffffff;
+  --phx-editor-ed-border:   #d0d5e0;
+  --phx-editor-ed-text:     #1a1e2e;
+  --phx-editor-accent:      #4f6ef7;
+  --phx-editor-danger:      #ff6b6b;
+  --phx-editor-popup-bg:    #ffffff;
+  --phx-editor-popup-shad:  0 12px 40px rgba(0,0,0,0.22);
+  --phx-editor-radius:      8px;
+  --phx-editor-font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --phx-editor-mono:        'JetBrains Mono','Fira Code',Consolas,'Courier New',monospace;
+  position: relative;
+}
+
+.phx-editor-container {
+  font-family: var(--phx-editor-font);
+  border: 1px solid var(--phx-editor-ed-border);
+  border-radius: var(--phx-editor-radius);
+  overflow: visible;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────── */
+
+.phx-editor-toolbar-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.phx-editor-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 8px 0 8px;
+  width: 100%;
+}
+.phx-editor-toolbar-row:last-child { padding-bottom: 8px; }
+.phx-editor-toolbar-row + .phx-editor-toolbar-row {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.phx-editor-toolbar {
+  background: var(--phx-editor-tb-bg);
+  border-radius: var(--phx-editor-radius) var(--phx-editor-radius) 0 0;
+  user-select: none;
+}
+
+.phx-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--phx-editor-tb-text);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--phx-editor-font);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.phx-editor-btn:hover  { background: var(--phx-editor-tb-hover); border-color: rgba(0,0,0,0.08); color: var(--phx-editor-tb-hover-text); }
+.phx-editor-btn.active { background: var(--phx-editor-tb-active); border-color: transparent; color: var(--phx-editor-tb-active-text); }
+.phx-editor-btn svg    { width: 15px; height: 15px; fill: currentColor; display: block; }
+
+.phx-editor-style-select {
+  height: 28px;
+  padding: 0 8px;
+  background: var(--phx-editor-tb-btn);
+  color: var(--phx-editor-tb-text);
+  border: 1px solid var(--phx-editor-tb-border);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--phx-editor-font);
+}
+.phx-editor-style-select:focus { border-color: var(--phx-editor-accent); }
+.phx-editor-style-select option { background: var(--phx-editor-tb-btn); color: var(--phx-editor-tb-text); }
+
+.phx-editor-sep {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: var(--phx-editor-tb-sep);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* ── Editor area ───────────────────────────────────────────────────────── */
+
+.phx-editor-editor {
+  min-height: 300px;
+  max-height: 700px;
+  padding: 22px 26px;
+  background: var(--phx-editor-ed-bg) !important;
+  color: var(--phx-editor-ed-text) !important;
+  font-family: var(--phx-editor-font);
+  font-size: 15px;
+  line-height: 1.75;
+  outline: none;
+  border-top: 1px solid var(--phx-editor-ed-border);
+  border-radius: 0 0 var(--phx-editor-radius) var(--phx-editor-radius);
+  overflow-y: auto;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+.phx-editor-editor:focus { box-shadow: inset 0 0 0 2px rgba(79,110,247,0.12); }
+
+/* Typography */
+.phx-editor-editor p   { margin: 0 0 0.9em; }
+.phx-editor-editor h1  { font-size: 2em;    font-weight: 700; margin: 0.4em 0 0.6em; }
+.phx-editor-editor h2  { font-size: 1.65em; font-weight: 700; margin: 0.4em 0 0.6em; }
+.phx-editor-editor h3  { font-size: 1.35em; font-weight: 600; margin: 0.4em 0 0.6em; }
+.phx-editor-editor h4  { font-size: 1.15em; font-weight: 600; margin: 0.4em 0 0.6em; }
+.phx-editor-editor h5  { font-size: 1em;    font-weight: 600; margin: 0.4em 0 0.6em; }
+.phx-editor-editor h6  { font-size: 0.9em;  font-weight: 600; margin: 0.4em 0 0.6em; }
+
+.phx-editor-editor blockquote {
+  border-left: 4px solid var(--phx-editor-accent);
+  margin: 1.2em 0;
+  padding: 0.5em 1.2em;
+  background: rgba(79,110,247,0.05);
+  color: #555;
+  font-style: italic;
+  border-radius: 0 4px 4px 0;
+}
+.phx-editor-editor pre {
+  background: var(--phx-editor-source-bg);
+  color: var(--phx-editor-source-text);
+  padding: 1.1em 1.4em;
+  border-radius: 6px;
+  font-family: var(--phx-editor-mono);
+  font-size: 13.5px;
+  overflow-x: auto;
+  margin: 1em 0;
+  line-height: 1.6;
+}
+.phx-editor-editor code {
+  background: #f0f2f8;
+  color: #c2185b;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-family: var(--phx-editor-mono);
+  font-size: 0.88em;
+}
+.phx-editor-editor pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+.phx-editor-editor a   { color: var(--phx-editor-accent); text-decoration: underline; }
+.phx-editor-editor img { max-width: 100%; height: auto; border-radius: 4px; }
+.phx-editor-editor ul,
+.phx-editor-editor ol  { padding-left: 1.6em; margin: 0.5em 0; }
+.phx-editor-editor li  { margin: 0.25em 0; }
+
+/* Custom widget placeholders — inserted via insertWidget(), atomic (contenteditable="false") */
+.phx-editor-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.15em 0.1em;
+  padding: 0.3em 0.7em;
+  border: 1px dashed var(--phx-editor-ed-border);
+  border-radius: var(--phx-editor-radius);
+  background: rgba(79,110,247,0.06);
+  color: var(--phx-editor-ed-text);
+  font-family: var(--phx-editor-font);
+  font-size: 0.9em;
+  cursor: default;
+  user-select: none;
+}
+.phx-editor-widget::before { content: '\1F9E9'; /* puzzle piece */ }
+
+/* Tables */
+.phx-editor-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 14px;
+}
+.phx-editor-editor table th,
+.phx-editor-editor table td {
+  border: 1px solid var(--phx-editor-ed-border);
+  padding: 8px 13px;
+  text-align: left;
+  vertical-align: top;
+}
+.phx-editor-editor table th { background: var(--phx-editor-table-th-bg, #f5f7fc); font-weight: 600; }
+.phx-editor-editor table tr:hover td { background: rgba(79,110,247,0.02); }
+
+/* BS mode: table inherits Bootstrap table variables → dark theme works automatically */
+.phx-editor-bs-mode .phx-editor-editor table th,
+.phx-editor-bs-mode .phx-editor-editor table td {
+  border-color: var(--bs-border-color, #dee2e6);
+}
+.phx-editor-bs-mode .phx-editor-editor table th {
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  color: var(--bs-body-color, inherit);
+}
+.phx-editor-bs-mode .phx-editor-editor table tr:hover td {
+  background: var(--bs-secondary-bg, rgba(0,0,0,0.02));
+}
+
+/* ── Bootstrap Grid in editor ─────────────────────────────────────────── */
+
+.phx-editor-editor .row {
+  display: flex !important;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  outline: 2px dashed rgba(79,110,247,0.35);
+  outline-offset: 3px;
+  position: relative;
+  min-height: 50px;
+  border-radius: 4px;
+  padding: 4px;
+  background: rgba(79,110,247,0.02);
+}
+.phx-editor-editor .row::before {
+  content: 'row';
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-size: 10px;
+  color: var(--phx-editor-accent);
+  font-family: var(--phx-editor-mono);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Column base — editor decorations only, DO NOT override flex/width */
+.phx-editor-editor [class^="col"],
+.phx-editor-editor [class*=" col"] {
+  outline: 1px dashed rgba(79,110,247,0.22);
+  min-height: 44px;
+  padding: 8px;
+  position: relative;
+  box-sizing: border-box;
+}
+.phx-editor-editor [class^="col"]::before,
+.phx-editor-editor [class*=" col"]::before {
+  content: attr(class);
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 9px;
+  color: var(--phx-editor-accent);
+  font-family: var(--phx-editor-mono);
+  opacity: 0.5;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 90%;
+  text-overflow: ellipsis;
+}
+
+/* Fallback Bootstrap 5 column widths (used when BS CSS not loaded, or to ensure editor accuracy) */
+.phx-editor-editor .col    { flex: 1 0 0%; }
+.phx-editor-editor .col-auto { flex: 0 0 auto; width: auto; }
+.phx-editor-editor .col-1  { flex: 0 0 auto; width:  8.333333%; }
+.phx-editor-editor .col-2  { flex: 0 0 auto; width: 16.666667%; }
+.phx-editor-editor .col-3  { flex: 0 0 auto; width: 25%; }
+.phx-editor-editor .col-4  { flex: 0 0 auto; width: 33.333333%; }
+.phx-editor-editor .col-5  { flex: 0 0 auto; width: 41.666667%; }
+.phx-editor-editor .col-6  { flex: 0 0 auto; width: 50%; }
+.phx-editor-editor .col-7  { flex: 0 0 auto; width: 58.333333%; }
+.phx-editor-editor .col-8  { flex: 0 0 auto; width: 66.666667%; }
+.phx-editor-editor .col-9  { flex: 0 0 auto; width: 75%; }
+.phx-editor-editor .col-10 { flex: 0 0 auto; width: 83.333333%; }
+.phx-editor-editor .col-11 { flex: 0 0 auto; width: 91.666667%; }
+.phx-editor-editor .col-12 { flex: 0 0 auto; width: 100%; }
+
+/* sm ≥576px */
+@media (min-width: 576px) {
+  .phx-editor-editor .col-sm    { flex: 1 0 0%; }
+  .phx-editor-editor .col-sm-auto { flex: 0 0 auto; width: auto; }
+  .phx-editor-editor .col-sm-1  { flex: 0 0 auto; width:  8.333333%; }
+  .phx-editor-editor .col-sm-2  { flex: 0 0 auto; width: 16.666667%; }
+  .phx-editor-editor .col-sm-3  { flex: 0 0 auto; width: 25%; }
+  .phx-editor-editor .col-sm-4  { flex: 0 0 auto; width: 33.333333%; }
+  .phx-editor-editor .col-sm-5  { flex: 0 0 auto; width: 41.666667%; }
+  .phx-editor-editor .col-sm-6  { flex: 0 0 auto; width: 50%; }
+  .phx-editor-editor .col-sm-7  { flex: 0 0 auto; width: 58.333333%; }
+  .phx-editor-editor .col-sm-8  { flex: 0 0 auto; width: 66.666667%; }
+  .phx-editor-editor .col-sm-9  { flex: 0 0 auto; width: 75%; }
+  .phx-editor-editor .col-sm-10 { flex: 0 0 auto; width: 83.333333%; }
+  .phx-editor-editor .col-sm-11 { flex: 0 0 auto; width: 91.666667%; }
+  .phx-editor-editor .col-sm-12 { flex: 0 0 auto; width: 100%; }
+}
+/* md ≥768px */
+@media (min-width: 768px) {
+  .phx-editor-editor .col-md    { flex: 1 0 0%; }
+  .phx-editor-editor .col-md-auto { flex: 0 0 auto; width: auto; }
+  .phx-editor-editor .col-md-1  { flex: 0 0 auto; width:  8.333333%; }
+  .phx-editor-editor .col-md-2  { flex: 0 0 auto; width: 16.666667%; }
+  .phx-editor-editor .col-md-3  { flex: 0 0 auto; width: 25%; }
+  .phx-editor-editor .col-md-4  { flex: 0 0 auto; width: 33.333333%; }
+  .phx-editor-editor .col-md-5  { flex: 0 0 auto; width: 41.666667%; }
+  .phx-editor-editor .col-md-6  { flex: 0 0 auto; width: 50%; }
+  .phx-editor-editor .col-md-7  { flex: 0 0 auto; width: 58.333333%; }
+  .phx-editor-editor .col-md-8  { flex: 0 0 auto; width: 66.666667%; }
+  .phx-editor-editor .col-md-9  { flex: 0 0 auto; width: 75%; }
+  .phx-editor-editor .col-md-10 { flex: 0 0 auto; width: 83.333333%; }
+  .phx-editor-editor .col-md-11 { flex: 0 0 auto; width: 91.666667%; }
+  .phx-editor-editor .col-md-12 { flex: 0 0 auto; width: 100%; }
+}
+/* lg ≥992px */
+@media (min-width: 992px) {
+  .phx-editor-editor .col-lg    { flex: 1 0 0%; }
+  .phx-editor-editor .col-lg-auto { flex: 0 0 auto; width: auto; }
+  .phx-editor-editor .col-lg-1  { flex: 0 0 auto; width:  8.333333%; }
+  .phx-editor-editor .col-lg-2  { flex: 0 0 auto; width: 16.666667%; }
+  .phx-editor-editor .col-lg-3  { flex: 0 0 auto; width: 25%; }
+  .phx-editor-editor .col-lg-4  { flex: 0 0 auto; width: 33.333333%; }
+  .phx-editor-editor .col-lg-5  { flex: 0 0 auto; width: 41.666667%; }
+  .phx-editor-editor .col-lg-6  { flex: 0 0 auto; width: 50%; }
+  .phx-editor-editor .col-lg-7  { flex: 0 0 auto; width: 58.333333%; }
+  .phx-editor-editor .col-lg-8  { flex: 0 0 auto; width: 66.666667%; }
+  .phx-editor-editor .col-lg-9  { flex: 0 0 auto; width: 75%; }
+  .phx-editor-editor .col-lg-10 { flex: 0 0 auto; width: 83.333333%; }
+  .phx-editor-editor .col-lg-11 { flex: 0 0 auto; width: 91.666667%; }
+  .phx-editor-editor .col-lg-12 { flex: 0 0 auto; width: 100%; }
+}
+/* xl ≥1200px */
+@media (min-width: 1200px) {
+  .phx-editor-editor .col-xl    { flex: 1 0 0%; }
+  .phx-editor-editor .col-xl-auto { flex: 0 0 auto; width: auto; }
+  .phx-editor-editor .col-xl-1  { flex: 0 0 auto; width:  8.333333%; }
+  .phx-editor-editor .col-xl-2  { flex: 0 0 auto; width: 16.666667%; }
+  .phx-editor-editor .col-xl-3  { flex: 0 0 auto; width: 25%; }
+  .phx-editor-editor .col-xl-4  { flex: 0 0 auto; width: 33.333333%; }
+  .phx-editor-editor .col-xl-5  { flex: 0 0 auto; width: 41.666667%; }
+  .phx-editor-editor .col-xl-6  { flex: 0 0 auto; width: 50%; }
+  .phx-editor-editor .col-xl-7  { flex: 0 0 auto; width: 58.333333%; }
+  .phx-editor-editor .col-xl-8  { flex: 0 0 auto; width: 66.666667%; }
+  .phx-editor-editor .col-xl-9  { flex: 0 0 auto; width: 75%; }
+  .phx-editor-editor .col-xl-10 { flex: 0 0 auto; width: 83.333333%; }
+  .phx-editor-editor .col-xl-11 { flex: 0 0 auto; width: 91.666667%; }
+  .phx-editor-editor .col-xl-12 { flex: 0 0 auto; width: 100%; }
+}
+/* xxl ≥1400px */
+@media (min-width: 1400px) {
+  .phx-editor-editor .col-xxl    { flex: 1 0 0%; }
+  .phx-editor-editor .col-xxl-auto { flex: 0 0 auto; width: auto; }
+  .phx-editor-editor .col-xxl-1  { flex: 0 0 auto; width:  8.333333%; }
+  .phx-editor-editor .col-xxl-2  { flex: 0 0 auto; width: 16.666667%; }
+  .phx-editor-editor .col-xxl-3  { flex: 0 0 auto; width: 25%; }
+  .phx-editor-editor .col-xxl-4  { flex: 0 0 auto; width: 33.333333%; }
+  .phx-editor-editor .col-xxl-5  { flex: 0 0 auto; width: 41.666667%; }
+  .phx-editor-editor .col-xxl-6  { flex: 0 0 auto; width: 50%; }
+  .phx-editor-editor .col-xxl-7  { flex: 0 0 auto; width: 58.333333%; }
+  .phx-editor-editor .col-xxl-8  { flex: 0 0 auto; width: 66.666667%; }
+  .phx-editor-editor .col-xxl-9  { flex: 0 0 auto; width: 75%; }
+  .phx-editor-editor .col-xxl-10 { flex: 0 0 auto; width: 83.333333%; }
+  .phx-editor-editor .col-xxl-11 { flex: 0 0 auto; width: 91.666667%; }
+  .phx-editor-editor .col-xxl-12 { flex: 0 0 auto; width: 100%; }
+}
+
+/* ── Source textarea ───────────────────────────────────────────────────── */
+
+.phx-editor-source {
+  display: none;
+  width: 100%;
+  min-height: 300px;
+  max-height: 700px;
+  padding: 18px 22px;
+  background: var(--phx-editor-source-bg);
+  color: var(--phx-editor-source-text);
+  border: none;
+  font-family: var(--phx-editor-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  resize: vertical;
+  outline: none;
+  border-radius: 0 0 var(--phx-editor-radius) var(--phx-editor-radius);
+  box-sizing: border-box;
+  tab-size: 2;
+}
+
+/* ── Upload placeholder ────────────────────────────────────────────────── */
+
+.phx-editor-img-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #f0f2f8;
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+  font-style: italic;
+  border: 1px dashed var(--phx-editor-ed-border);
+}
+
+/* ── Popup overlay ─────────────────────────────────────────────────────── */
+
+.phx-editor-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,12,26,0.5);
+  backdrop-filter: blur(2px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: nwvFadeIn 0.14s ease;
+}
+@keyframes nwvFadeIn  { from { opacity:0 } to { opacity:1 } }
+@keyframes nwvSlideUp { from { transform:translateY(10px);opacity:0 } to { transform:translateY(0);opacity:1 } }
+
+.phx-editor-popup {
+  background: var(--phx-editor-popup-bg);
+  border-radius: 12px;
+  box-shadow: var(--phx-editor-popup-shad);
+  min-width: 350px;
+  max-width: 580px;
+  width: 90%;
+  padding: 28px;
+  animation: nwvSlideUp 0.16s ease;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.phx-editor-popup-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--phx-editor-ed-text);
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phx-editor-popup-title svg { width: 18px; height: 18px; fill: var(--phx-editor-accent); }
+
+.phx-editor-popup-field { margin-bottom: 14px; }
+.phx-editor-popup-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.phx-editor-popup-field input,
+.phx-editor-popup-field select {
+  width: 100%;
+  height: 38px;
+  padding: 0 11px;
+  border: 1.5px solid var(--phx-editor-ed-border);
+  border-radius: 7px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: var(--phx-editor-font);
+  transition: border-color 0.12s, box-shadow 0.12s;
+  background: #fff;
+  color: var(--phx-editor-ed-text);
+}
+.phx-editor-popup-field input:focus,
+.phx-editor-popup-field select:focus {
+  border-color: var(--phx-editor-accent);
+  box-shadow: 0 0 0 3px rgba(79,110,247,0.12);
+}
+.phx-editor-popup-field input[type="file"] { height: auto; padding: 7px; }
+
+.phx-editor-popup-hint {
+  font-size: 12px;
+  color: #999;
+  margin: -8px 0 14px;
+}
+
+.phx-editor-popup-actions {
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #f0f2f8;
+}
+.phx-editor-popup-btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: var(--phx-editor-font);
+  transition: all 0.12s;
+}
+.phx-editor-popup-btn-primary   { background: var(--phx-editor-accent); color: #fff; }
+.phx-editor-popup-btn-primary:hover { background: #3d57e8; transform: translateY(-1px); }
+.phx-editor-popup-btn-secondary { background: #f0f2f8; color: #555; }
+.phx-editor-popup-btn-secondary:hover { background: #e3e7f5; }
+
+/* ── Table size picker ─────────────────────────────────────────────────── */
+
+.phx-editor-table-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 26px);
+  gap: 3px;
+  margin: 8px 0;
+}
+.phx-editor-table-cell {
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid #d0d5e0;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #f8f9fc;
+  transition: background 0.08s, border-color 0.08s;
+}
+.phx-editor-table-cell.highlighted { background: rgba(79,110,247,0.18); border-color: var(--phx-editor-accent); }
+.phx-editor-table-size-label { font-size: 12px; color: #888; margin-top: 5px; font-family: var(--phx-editor-mono); }
+
+/* ── Grid builder popup ────────────────────────────────────────────────── */
+
+.phx-editor-grid-preview {
+  display: flex;
+  gap: 3px;
+  height: 36px;
+  margin: 12px 0 16px;
+  border: 1.5px dashed var(--phx-editor-ed-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.phx-editor-grid-preview-col {
+  background: rgba(79,110,247,0.12);
+  border-right: 1px dashed rgba(79,110,247,0.2);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--phx-editor-accent);
+  font-family: var(--phx-editor-mono);
+}
+.phx-editor-grid-preview-col:last-child { border-right: none; }
+
+.phx-editor-grid-cols-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.phx-editor-grid-col-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8f9fc;
+  border: 1px solid #eaecf5;
+  border-radius: 7px;
+}
+.phx-editor-grid-col-row .col-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--phx-editor-accent);
+  font-family: var(--phx-editor-mono);
+  min-width: 60px;
+}
+.phx-editor-grid-col-row select {
+  flex: 1;
+  height: 30px !important;
+  padding: 0 8px !important;
+  font-size: 13px !important;
+  border-radius: 5px !important;
+}
+.phx-editor-grid-col-row .phx-editor-grid-col-remove {
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.1s, background 0.1s;
+}
+.phx-editor-grid-col-row .phx-editor-grid-col-remove:hover { color: var(--phx-editor-danger); background: rgba(255,107,107,0.08); }
+
+.phx-editor-add-col-btn {
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: 1.5px dashed var(--phx-editor-accent);
+  color: var(--phx-editor-accent);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--phx-editor-font);
+  font-weight: 500;
+  transition: background 0.12s;
+  margin-top: 4px;
+}
+.phx-editor-add-col-btn:hover { background: rgba(79,110,247,0.06); }
+
+/* ── Shared floating toolbar base ──────────────────────────────────────── */
+
+.phx-editor-float-bar {
+  position: fixed;
+  background: var(--phx-editor-float-bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: none;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: nowrap;           /* never wrap — scroll instead */
+  gap: 6px;
+  box-shadow: var(--phx-editor-float-shadow);
+  z-index: 9997;
+  border: 1px solid var(--phx-editor-float-border);
+  max-width: calc(100vw - 20px);
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.phx-editor-float-bar-label {
+  font-size: 10px;
+  color: var(--phx-editor-float-label);
+  font-family: var(--phx-editor-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.phx-editor-float-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--phx-editor-float-sep);
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+.phx-editor-float-bar .phx-editor-btn {
+  height: 26px;
+  font-size: 11px;
+  padding: 0 9px;
+  align-self: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.phx-editor-float-bar .danger { color: rgba(255,107,107,0.8); }
+.phx-editor-float-bar .danger:hover { color: var(--phx-editor-danger); background: rgba(255,107,107,0.1); }
+
+/* ── Grid floating toolbar — column cards ──────────────────────────────── */
+
+/* Each column = a card with header + vertical bp list */
+.phx-editor-grid-float-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+/* Card header: title + ✕ remove button */
+.phx-editor-grid-float-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: 6px;
+}
+.phx-editor-grid-float-col-title {
+  font-size: 10px;
+  color: var(--phx-editor-accent);
+  font-family: var(--phx-editor-mono);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.phx-editor-grid-float-col .rm-col {
+  background: none;
+  border: none;
+  color: rgba(255,107,107,0.55);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.1s;
+}
+.phx-editor-grid-float-col .rm-col:hover { color: var(--phx-editor-danger); }
+
+/* Breakpoints list — vertical rows */
+.phx-editor-grid-float-bps {
+  display: flex;
+  flex-direction: column;  /* ← stacked vertically */
+  gap: 0;
+  padding: 3px 0;
+}
+
+/* One breakpoint row: label on left, select on right */
+.phx-editor-grid-float-bp {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  padding: 2px 8px;
+  transition: background 0.08s;
+}
+.phx-editor-grid-float-bp:hover { background: rgba(255,255,255,0.04); }
+
+.phx-editor-grid-float-bp-label {
+  font-size: 10px;
+  color: var(--phx-editor-float-label);
+  font-family: var(--phx-editor-mono);
+  text-transform: uppercase;
+  width: 30px;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+.phx-editor-grid-float-bp select {
+  height: 20px;
+  flex: 1;
+  padding: 0 4px;
+  background: var(--phx-editor-float-bg);
+  color: var(--phx-editor-float-label);
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--phx-editor-mono);
+  text-align: right;
+}
+.phx-editor-grid-float-bp select:focus { color: var(--phx-editor-tb-text); }
+.phx-editor-grid-float-bp select.active-bp {
+  color: var(--phx-editor-tb-text);
+  font-weight: 600;
+}
+
+/* ── Grid float — actions row ──────────────────────────────────────────── */
+
+.phx-editor-grid-float-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: center;
+  flex-shrink: 0;
+}
+.phx-editor-grid-float-actions .phx-editor-btn {
+  width: 100%;
+}
+
+/* ── Table floating toolbar ────────────────────────────────────────────── */
+
+.phx-editor-table-float-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.phx-editor-table-float-group .phx-editor-float-bar-label {
+  font-size: 9px;
+  margin-right: 2px;
+}
+
+/* ── Color picker ──────────────────────────────────────────────────────── */
+
+.phx-editor-color-btn {
+  position: relative;
+  padding-bottom: 5px !important;
+}
+.phx-editor-color-indicator {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.phx-editor-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.phx-editor-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+  outline: none;
+  padding: 0;
+  flex-shrink: 0;
+}
+.phx-editor-color-swatch:hover   { transform: scale(1.18); border-color: rgba(0,0,0,0.2); }
+.phx-editor-color-swatch.selected { border-color: var(--phx-editor-accent); transform: scale(1.12); box-shadow: 0 0 0 2px rgba(79,110,247,0.35); }
+
+.phx-editor-color-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  font-weight: 700;
+  border: 1.5px solid var(--phx-editor-ed-border);
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #f8f9fc;
+}
+
+/* ── Emoji picker ──────────────────────────────────────────────────────── */
+
+.phx-editor-popup:has(.phx-editor-emoji-tabs) {
+  max-width: 440px;
+}
+
+.phx-editor-emoji-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f2f8;
+}
+.phx-editor-emoji-tab {
+  background: #f3f4f9;
+  border: 1.5px solid transparent;
+  border-radius: 5px;
+  font-size: 17px;
+  width: 34px;
+  height: 30px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  padding: 0;
+  line-height: 1;
+}
+.phx-editor-emoji-tab:hover  { background: #e8ebff; }
+.phx-editor-emoji-tab.active { background: #e8ebff; border-color: var(--phx-editor-accent); }
+
+.phx-editor-emoji-content {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.phx-editor-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.phx-editor-emoji-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.08s, transform 0.08s;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phx-editor-emoji-btn:hover { background: #f0f2fc; transform: scale(1.2); border-color: #e0e4f5; }
+
+/* ── HR in editor ──────────────────────────────────────────────────────── */
+
+.phx-editor-editor hr {
+  border: none;
+  border-top: 2px solid var(--phx-editor-ed-border);
+  margin: 1.5em 0;
+  border-radius: 1px;
+}
+
+/* ── Special character picker ──────────────────────────────────────────── */
+
+.phx-editor-popup:has(.phx-editor-sc-tabs) {
+  max-width: 520px;
+}
+
+.phx-editor-sc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f2f8;
+}
+.phx-editor-sc-tab {
+  background: #f3f4f9;
+  border: 1.5px solid transparent;
+  border-radius: 5px;
+  font-size: 11px;
+  font-family: var(--phx-editor-font);
+  font-weight: 500;
+  padding: 3px 9px;
+  height: 26px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+  color: #555;
+}
+.phx-editor-sc-tab:hover  { background: #e8ebff; color: var(--phx-editor-accent); }
+.phx-editor-sc-tab.active { background: #e8ebff; border-color: var(--phx-editor-accent); color: var(--phx-editor-accent); font-weight: 700; }
+
+.phx-editor-sc-content {
+  max-height: 230px;
+  overflow-y: auto;
+}
+.phx-editor-sc-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.phx-editor-sc-btn {
+  background: #f8f9fc;
+  border: 1px solid #e8ecf5;
+  border-radius: 5px;
+  font-size: 15px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.08s, border-color 0.08s, transform 0.08s;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', serif;
+  color: var(--phx-editor-ed-text);
+  flex-shrink: 0;
+}
+.phx-editor-sc-btn:hover {
+  background: #e8ebff;
+  border-color: var(--phx-editor-accent);
+  transform: scale(1.18);
+  z-index: 1;
+  position: relative;
+}
+
+.phx-editor-sc-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #999;
+  font-family: var(--phx-editor-mono);
+  min-height: 16px;
+  padding: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Fullscreen ────────────────────────────────────────────────────────── */
+
+body.phx-editor-fullscreen-open {
+  overflow: hidden;
+}
+
+.phx-editor-fullscreen-open .phx-editor-wrapper,
+.phx-editor-wrapper.phx-editor-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99990 !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--phx-editor-bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.phx-editor-wrapper.phx-editor-fullscreen .phx-editor-toolbar {
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.phx-editor-wrapper.phx-editor-fullscreen .phx-editor-editor {
+  flex: 1 1 auto !important;
+  min-height: unset !important;
+  max-height: unset !important;
+  overflow-y: auto;
+  border-radius: 0;
+  border-top: none;
+}
+
+.phx-editor-wrapper.phx-editor-fullscreen .phx-editor-source {
+  flex: 1 1 auto !important;
+  min-height: unset !important;
+  max-height: unset !important;
+  border-radius: 0;
+}
+
+/* Float bars use position:absolute relative to wrapper */
+
+/* ── Transparent swatch (checkerboard) ─────────────────────────────────── */
+.phx-editor-swatch-transparent {
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%) !important;
+  background-size: 6px 6px !important;
+  background-position: 0 0, 0 3px, 3px -3px, -3px 0px !important;
+  background-color: #fff !important;
+}
+
+/* ── Image floating toolbar ────────────────────────────────────────────── */
+
+.phx-editor-img-float {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 5px;
+  padding: 5px 8px;
+}
+
+.phx-editor-img-dim-input {
+  width: 58px;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--phx-editor-float-sep);
+  color: var(--phx-editor-tb-text);
+  border: 1px solid var(--phx-editor-float-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--phx-editor-mono);
+  outline: none;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+.phx-editor-img-dim-input::-webkit-outer-spin-button,
+.phx-editor-img-dim-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.phx-editor-img-dim-input:focus { border-color: var(--phx-editor-accent); color: var(--phx-editor-tb-text); }
+
+.phx-editor-img-text-input {
+  width: 120px;
+  height: 24px;
+  padding: 0 7px;
+  background: var(--phx-editor-float-sep);
+  color: var(--phx-editor-tb-text);
+  border: 1px solid var(--phx-editor-float-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--phx-editor-font);
+  outline: none;
+}
+.phx-editor-img-text-input:focus { border-color: rgba(79,110,247,0.6); color: #fff; }
+
+.phx-editor-img-lock {
+  font-size: 13px;
+  padding: 0 6px;
+  height: 24px;
+  line-height: 1;
+}
+
+/* Highlight selected image */
+.phx-editor-editor img:focus,
+.phx-editor-editor img.phx-editor-img-selected {
+  outline: 2px solid var(--phx-editor-accent);
+  outline-offset: 2px;
+}
+
+/* Value textarea — hidden, used only for form submission */
+.phx-editor-value-field {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════════════════════
+
+   Three ways to activate:
+
+   A) Automatic (follows OS/browser):
+      Add data-theme="auto" to the wrapper (default when setTheme('auto'))
+
+   B) Always dark:
+      Add data-theme="dark" to the wrapper
+
+   C) Manual CSS override in your project:
+      .phx-editor-wrapper {
+  position: relative; --phx-editor-ed-bg: #1e2130; ... }
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dark editor area variables ─────────────────────────────────────────── */
+
+.phx-editor-wrapper[data-theme="dark"],
+.phx-editor-wrapper[data-theme="auto"] {
+  --phx-editor-tb-bg:       #1a1e2e;
+  --phx-editor-tb-btn:      #2d3349;
+  --phx-editor-tb-hover:    #3d4559;
+  --phx-editor-tb-active:   #4f6ef7;
+  --phx-editor-tb-text:     #c8cdd8;
+  --phx-editor-tb-sep:      rgba(255,255,255,0.1);
+  --phx-editor-tb-border:    rgba(255,255,255,0.08);
+  --phx-editor-tb-hover-text:  #ffffff;
+  --phx-editor-tb-active-text:  #ffffff;
+  --phx-editor-source-bg:       #0d1117;
+  --phx-editor-source-text:     #c9d1d9;
+  --phx-editor-float-bg:        #1a1e2e;
+  --phx-editor-float-border:    rgba(255,255,255,0.07);
+  --phx-editor-float-shadow:    0 6px 28px rgba(0,0,0,0.55);
+  --phx-editor-float-label:     rgba(200,205,216,0.45);
+  --phx-editor-float-sep:       rgba(255,255,255,0.08);
+  --phx-editor-ed-bg:       #1e2130;
+  --phx-editor-ed-border:   #2d3349;
+  --phx-editor-ed-text:     #d4d8e8;
+  --phx-editor-popup-bg:    #252a3d;
+  --phx-editor-popup-shad:  0 12px 40px rgba(0,0,0,0.55);
+}
+
+/* auto: only activate dark editor when OS is in dark mode */
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] {
+    --phx-editor-tb-bg:       #f5f6fa;
+    --phx-editor-tb-btn:      #eaecf4;
+    --phx-editor-tb-hover:    #dde0ee;
+    --phx-editor-tb-active:   #4f6ef7;
+    --phx-editor-tb-text:     #2d3349;
+    --phx-editor-tb-sep:      rgba(0,0,0,0.12);
+  --phx-editor-tb-border:    rgba(0,0,0,0.12);
+  --phx-editor-tb-hover-text:  #1a1e2e;
+  --phx-editor-tb-active-text:  #ffffff;
+  --phx-editor-source-bg:       #f8f9fc;
+  --phx-editor-source-text:     #1a1e2e;
+  --phx-editor-float-bg:        #ffffff;
+  --phx-editor-float-border:    rgba(0,0,0,0.12);
+  --phx-editor-float-shadow:    0 6px 28px rgba(0,0,0,0.14);
+  --phx-editor-float-label:     rgba(60,70,100,0.55);
+  --phx-editor-float-sep:       rgba(0,0,0,0.09);
+    --phx-editor-ed-bg:       #ffffff;
+    --phx-editor-ed-border:   #d0d5e0;
+    --phx-editor-ed-text:     #1a1e2e;
+    --phx-editor-popup-bg:    #ffffff;
+    --phx-editor-popup-shad:  0 12px 40px rgba(0,0,0,0.22);
+  }
+}
+
+/* ── Dark editor area ────────────────────────────────────────────────────── */
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-editor,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-editor {
+  color:      var(--phx-editor-ed-text);
+  background: var(--phx-editor-ed-bg);
+  caret-color: #7c8fff;
+}
+
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-editor {
+    color:      var(--phx-editor-ed-text);
+    background: var(--phx-editor-ed-bg);
+    caret-color: auto;
+  }
+}
+
+/* ── Dark popup dialogs ──────────────────────────────────────────────────── */
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-popup,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-popup {
+  background: var(--phx-editor-popup-bg);
+  color: var(--phx-editor-ed-text);
+}
+
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-popup {
+    background: var(--phx-editor-popup-bg);
+    color: var(--phx-editor-ed-text);
+  }
+}
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-popup-field input,
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-popup-field select,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-field input,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-field select {
+  background: #1a1e2e;
+  color: #c8cdd8;
+  border-color: #3d4559;
+}
+
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-field input,
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-field select {
+    background: #fff;
+    color: var(--phx-editor-ed-text);
+    border-color: var(--phx-editor-ed-border);
+  }
+}
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-popup-title,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-title {
+  color: #e0e4f4;
+}
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-popup-title { color: var(--phx-editor-ed-text); }
+}
+
+/* ── Dark sc / emoji pickers ─────────────────────────────────────────────── */
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-sc-tab,
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-sc-btn,
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-emoji-tab,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-sc-tab,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-sc-btn,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-emoji-tab {
+  background: #2d3349;
+  border-color: #3d4559;
+  color: #c8cdd8;
+}
+
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-sc-tab,
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-sc-btn,
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-emoji-tab {
+    background: #f3f4f9;
+    border-color: #e8ecf5;
+    color: #555;
+  }
+}
+
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-sc-hint,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-sc-hint { color: #6b7280; }
+
+/* ── Dark source textarea ────────────────────────────────────────────────── */
+/* Source view uses CSS vars — adapts to light/dark automatically */
+
+/* ── Dark color grid / swatches ──────────────────────────────────────────── */
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-color-preview,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-color-preview {
+  background: #2d3349;
+  border-color: #3d4559;
+}
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-color-preview {
+    background: #f8f9fc;
+    border-color: var(--phx-editor-ed-border);
+  }
+}
+
+/* ── Dark grid col builder ───────────────────────────────────────────────── */
+.phx-editor-wrapper[data-theme="dark"] .phx-editor-grid-col-row,
+.phx-editor-wrapper[data-theme="auto"] .phx-editor-grid-col-row {
+  background: #252a3d;
+  border-color: #3d4559;
+}
+@media (prefers-color-scheme: light) {
+  .phx-editor-wrapper[data-theme="auto"] .phx-editor-grid-col-row {
+    background: #f8f9fc;
+    border-color: #eaecf5;
+  }
+}
+
+/* ── Bootstrap integration mode ────────────────────────────────────────── */
+
+/* Wrapper in BS mode: no custom background/shadow, inherit from BS */
+.phx-editor-bs-mode.phx-editor-container,
+.phx-editor-bs-mode {
+  box-shadow: none;
+  border: 1px solid var(--bs-border-color, #dee2e6) !important;
+  border-radius: var(--bs-border-radius, 0.375rem) !important;
+}
+
+/* Toolbar: no custom dark bg, use BS surface */
+.phx-editor-bs-mode .phx-editor-toolbar-row + .phx-editor-toolbar-row {
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+.phx-editor-bs-mode .phx-editor-toolbar {
+  background: transparent !important;
+  border-radius: var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem) 0 0 !important;
+}
+
+/* Editor area */
+.phx-editor-bs-mode .phx-editor-editor {
+  background: var(--bs-body-bg, #fff) !important;
+  color: var(--bs-body-color, #212529) !important;
+  border-top: 1px solid var(--bs-border-color, #dee2e6) !important;
+  border-radius: 0 0 var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem) !important;
+}
+
+/* Selects in toolbar — auto width */
+.phx-editor-bs-mode .phx-editor-toolbar select {
+  width: auto !important;
+}
+
+/* Buttons inherit BS btn styles — just fix icon sizing */
+.phx-editor-bs-mode .btn svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  display: block;
+}
+
+/* Float bars */
+.phx-editor-bs-mode .phx-editor-float-bar {
+  background: var(--bs-body-bg, #fff) !important;
+  border-color: var(--bs-border-color, #dee2e6) !important;
+  border-radius: var(--bs-border-radius-sm, 0.25rem) !important;
+  gap: 4px;
+}
+
+/* Color indicator on btn */
+.phx-editor-bs-mode .phx-editor-color-indicator {
+  bottom: 1px;
+}
+
+/* Source textarea */
+.phx-editor-bs-mode .phx-editor-source {
+  background: var(--bs-body-bg, #fff) !important;
+  color: var(--bs-body-color, #212529) !important;
+}
+
+/* ── Bootstrap UI mode ──────────────────────────────────────────────────── */
+
+/* Wrapper je card — skryjeme vlastní border/shadow z .phx-editor-container */
+.phx-editor-bs-mode .phx-editor-container {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Toolbar — tmavý background zůstává, Bootstrap btn-outline-secondary se adaptuje */
+.phx-editor-bs-mode .phx-editor-toolbar-row + .phx-editor-toolbar-row {
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+.phx-editor-bs-mode .phx-editor-toolbar {
+  border-radius: 0;
+}
+
+/* V BS mode tlačítka dostávají Bootstrap hover/focus styly — skryjeme nwv override */
+.phx-editor-bs-mode .btn.active {
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+  --bs-btn-active-color: #fff;
+}
+
+/* Editor area — žádný vlastní border-top, card se stará o border */
+.phx-editor-bs-mode .phx-editor-editor {
+  border-top: 1px solid var(--bs-border-color, #dee2e6) !important;
+}
+
+/* Float bary v BS mode jako card */
+.phx-editor-bs-mode .phx-editor-float-bar {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6) !important;
+  border-radius: var(--bs-border-radius, .375rem) !important;
+  box-shadow: var(--bs-box-shadow-sm, 0 .125rem .25rem rgba(0,0,0,.075)) !important;
+  color: var(--bs-body-color, #212529);
+}
+
+/* Dim inputs v float barech */
+.phx-editor-bs-mode .phx-editor-img-dim-input,
+.phx-editor-bs-mode .phx-editor-img-text-input {
+  background: var(--bs-body-bg, #fff) !important;
+  color: var(--bs-body-color, #212529) !important;
+  border-color: var(--bs-border-color, #dee2e6) !important;
+}

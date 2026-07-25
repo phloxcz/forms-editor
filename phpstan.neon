@@ -1,0 +1,9 @@
+parameters:
+    level: 8
+    paths:
+        - src
+
+    phpVersion: 80400
+
+includes:
+    - vendor/phpstan/phpstan-nette/extension.neon

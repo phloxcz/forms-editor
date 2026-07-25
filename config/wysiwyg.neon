@@ -1,0 +1,5 @@
+# config/wysiwyg.neon
+# Include this file in your application config, or register the extension directly:
+#
+# extensions:
+#     editor: Phlox\Forms\Editor\EditorExtension
