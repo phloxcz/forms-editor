@@ -10,6 +10,9 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Custom widget insertion:** `window.PhloxEditor.insertWidget(type, id, label, fieldName?)` inserts an atomic, non-editable `<div data-widget data-id>` placeholder at the caret, for embedding CMS widgets (polls, embeds, dynamic blocks) that get resolved server-side after sanitization
 - `widget` theme key for styling the placeholder in `default` / `bootstrap` / `tailwind` presets
 
+### Fixed
+- **Pasted image lost on save when upload fails:** when an image is pasted and `uploadUrl` is configured but the upload request fails, the fallback inserted a `blob:` object URL instead of a persistable `data:` URL. `blob:` URLs only live in the browser tab's memory, so the image silently disappeared after saving/reloading. The fallback now reads the file via `FileReader.readAsDataURL()` and inlines it as base64, matching the existing no-`uploadUrl` behavior.
+
 ## [1.0.0] – 2026-07-25
 
 ### Added

@@ -1531,13 +1531,19 @@
                 this._sync();
               })
               .catch(err => {
-                ph.remove();
-                // Fallback: insert as base64 with a warning class
-                const img = this._makeImg(URL.createObjectURL(file), '', 'img-fluid phx-editor-img-blob');
-                const sel2 = this._sel();
-                if (sel2?.rangeCount) sel2.getRangeAt(0).insertNode(img);
-                this._sync();
-                console.warn('[nwv] Upload failed, inserted blob URL:', err.message);
+                // Fallback: inline as base64, same as the no-uploadUrl branch
+                // below - a blob: URL only lives in this tab's memory for
+                // this session, so it's already dead on the very next
+                // reload (let alone after actually saving the form), unlike
+                // this, which is real, persistable content.
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  const img = this._makeImg(ev.target.result, '', 'img-fluid');
+                  ph.replaceWith(img);
+                  this._sync();
+                };
+                reader.readAsDataURL(file);
+                console.warn('[nwv] Upload failed, inserted as base64:', err.message);
               });
           } else {
             // No upload URL — insert as base64 (user's choice)
