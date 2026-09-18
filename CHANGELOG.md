@@ -12,6 +12,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - **Pasted image lost on save when upload fails:** when an image is pasted and `uploadUrl` is configured but the upload request fails, the fallback inserted a `blob:` object URL instead of a persistable `data:` URL. `blob:` URLs only live in the browser tab's memory, so the image silently disappeared after saving/reloading. The fallback now reads the file via `FileReader.readAsDataURL()` and inlines it as base64, matching the existing no-`uploadUrl` behavior.
+- **Inconsistent image-insert fallback:** unified image insertion (paste and the "Insert image" dialog's file picker) around one rule: upload when `uploadUrl` is configured, otherwise inline as base64. Previously the dialog's file picker refused to insert anything without `uploadUrl` (alert only) and showed a bare error alert with no image on upload failure, instead of falling back to base64 like the paste handler.
 
 ## [1.0.0] – 2026-07-25
 

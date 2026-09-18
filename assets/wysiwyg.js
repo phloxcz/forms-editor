@@ -1720,7 +1720,12 @@
 
     _uploadAndInsertImage(file, alt, cls) {
       if (!this.uploadUrl) {
-        alert('Upload URL není nastavena. Zavolejte setUploadRoute() na EditorInput.');
+        // No uploadUrl configured at all - same choice _handlePaste() makes
+        // for a paste with no uploadUrl: insert the file inline as base64
+        // rather than refusing to insert anything.
+        const reader = new FileReader();
+        reader.onload = ev => this._insertImageNode(ev.target.result, alt, cls);
+        reader.readAsDataURL(file);
         return;
       }
       // Placeholder
@@ -1740,7 +1745,18 @@
           ph.replaceWith(img);
           this._sync();
         })
-        .catch(err => { ph.remove(); alert('Chyba uploadu: ' + err.message); this._sync(); });
+        .catch(err => {
+          // Upload failed - same fallback as _handlePaste(): inline as
+          // base64 rather than dropping the image the user just picked.
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const img = this._makeImg(ev.target.result, alt, cls);
+            ph.replaceWith(img);
+            this._sync();
+          };
+          reader.readAsDataURL(file);
+          console.warn('[nwv] Upload failed, inserted as base64:', err.message);
+        });
     }
 
     _insertImageNode(url, alt, cls) {
