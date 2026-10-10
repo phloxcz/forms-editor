@@ -89,6 +89,8 @@ class EditorInput extends BaseControl
     public const TB_EMOJI       = 'emoji';
     /** Special character picker */
     public const TB_SPECIALCHAR = 'specialchar';
+    /** Variable picker — inserts {{ ref }} placeholders, see setVariables(); hidden without variables */
+    public const TB_VARIABLES   = 'variables';
     /** Horizontal rule */
     public const TB_HR          = 'hr';
     /** Clear formatting */
@@ -117,6 +119,7 @@ class EditorInput extends BaseControl
         self::TB_TABLE,
         self::TB_EMOJI,
         self::TB_SPECIALCHAR,
+        self::TB_VARIABLES,
         self::TB_HR,
         self::TB_CLEARFMT,
         self::TB_GRID,
@@ -166,6 +169,9 @@ class EditorInput extends BaseControl
     private int     $minHeight    = 300;
     private int     $maxHeight    = 700;
     private string  $colorScheme  = 'auto';    // 'light' | 'dark' | 'auto'
+    /** @var list<array{ref: string, label: string, group: string}>|null null = no variable support */
+    private ?array  $variables    = null;
+    private string  $variableFormat = '{{ %s }}';
 
     public function __construct(string $label = '')
     {
@@ -174,6 +180,47 @@ class EditorInput extends BaseControl
     }
 
     // ── Fluent API ───────────────────────────────────────────────────────────
+
+    /**
+     * Variables the editor offers to insert (toolbar group TB_VARIABLES).
+     *
+     * The text stores a placeholder — by default "{{ ref }}" — which the
+     * application replaces with the value when it renders the content; the
+     * editor shows each placeholder as an atomic chip with the variable's
+     * label, and writes it back as the plain placeholder (the stored HTML
+     * and the source view never contain the chips).
+     *
+     *   ->setVariables([
+     *       ['ref' => 'shop.phone', 'label' => 'Telefon', 'group' => 'Prodávající'],
+     *       ['ref' => 'site.name',  'label' => 'Název webu', 'group' => 'Web'],
+     *   ])
+     *
+     * A ref is "word.word" (letters, digits, "-", "_"). A placeholder whose ref
+     * isn't in the list still shows as a chip, marked as unknown.
+     *
+     * @param list<array{ref: string, label?: string, group?: string}> $variables
+     * @param string $format  sprintf() pattern of the placeholder, "%s" = the ref
+     */
+    public function setVariables(array $variables, string $format = '{{ %s }}'): static
+    {
+        $this->variables = [];
+        foreach ($variables as $v) {
+            $ref = (string) ($v['ref'] ?? '');
+            if (preg_match('~^[a-z0-9][a-z0-9_-]*\.[a-z0-9][a-z0-9_-]*$~i', $ref)) {
+                $this->variables[] = [
+                    'ref'   => $ref,
+                    'label' => (string) ($v['label'] ?? $ref),
+                    'group' => (string) ($v['group'] ?? ''),
+                ];
+            }
+        }
+        if (!str_contains($format, '%s')) {
+            throw new \InvalidArgumentException('The variable format must contain "%s" for the reference.');
+        }
+        $this->variableFormat = $format;
+        return $this;
+    }
+
 
     /** URL of the image-upload endpoint. */
     public function setUploadRoute(string $url): static
@@ -327,7 +374,9 @@ class EditorInput extends BaseControl
             ->data('theme',         json_encode($this->resolveThemeClasses()))
             ->data('min-height',    $this->minHeight)
             ->data('max-height',    $this->maxHeight)
-            ->data('color-scheme',  $this->colorScheme);
+            ->data('color-scheme',  $this->colorScheme)
+            ->data('variables',     $this->variables !== null ? json_encode($this->variables, JSON_UNESCAPED_UNICODE) : null)
+            ->data('variable-format', $this->variables !== null ? $this->variableFormat : null);
     }
 
     public function getLabel(string|\Stringable|null $caption = null): Html|string|null

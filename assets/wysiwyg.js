@@ -189,6 +189,7 @@
     bgcolor:    '<svg viewBox="0 0 24 24"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15a1.49 1.49 0 0 0 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><rect x="3" y="20" width="18" height="2" rx="1" fill="currentColor"/></svg>',
     clearfmt:   '<svg viewBox="0 0 24 24"><path d="M3.27 5L2 6.27l6.97 6.97L6.5 19h3l1.57-3.66L16.73 21 18 19.73 3.27 5zM6 5v.18L8.82 8h2.4l-.72 1.68 2.1 2.1L14.21 8H20V5H6z"/></svg>',
     specialchar: 'Ω',
+    variables:   '<svg viewBox="0 0 24 24"><path d="M8 3a3 3 0 0 0-3 3v3.17A2.5 2.5 0 0 1 3 11.5v1a2.5 2.5 0 0 1 2 2.33V18a3 3 0 0 0 3 3h1v-2H8a1 1 0 0 1-1-1v-3.17c0-1-.5-1.9-1.3-2.33.8-.43 1.3-1.33 1.3-2.33V6a1 1 0 0 1 1-1h1V3H8zm8 0h-1v2h1a1 1 0 0 1 1 1v3.17c0 1 .5 1.9 1.3 2.33-.8.43-1.3 1.33-1.3 2.33V18a1 1 0 0 1-1 1h-1v2h1a3 3 0 0 0 3-3v-3.17a2.5 2.5 0 0 1 2-2.33v-1a2.5 2.5 0 0 1-2-2.33V6a3 3 0 0 0-3-3z"/></svg>',
     hr:          '<svg viewBox="0 0 24 24"><path d="M19 12H5v1.5h14V12zM4 19h16v-1.5H4V19zM4 5v1.5h16V5H4z"/></svg>',
     alignleft:   '<svg viewBox="0 0 24 24"><path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/></svg>',
     aligncenter: '<svg viewBox="0 0 24 24"><path d="M7 15v2h10v-2H7zm-4 6h18v-2H3v2zm0-8h18v-2H3v2zm4-6v2h10V7H7zM3 3v2h18V3H3z"/></svg>',
@@ -241,6 +242,11 @@
       this.bs          = this.cls.bsModal === true;
       const colorScheme = wrapper.dataset.colorScheme || 'light';
       if (colorScheme !== 'light') wrapper.setAttribute('data-theme', colorScheme);
+      // Variables (EditorInput::setVariables()): null = the feature is off,
+      // placeholders stay plain text; else they're shown as chips
+      this.variables      = wrapper.dataset.variables ? JSON.parse(wrapper.dataset.variables) : null;
+      this.variableFormat = wrapper.dataset.variableFormat || '{{ %s }}';
+      this.variableMap    = new Map((this.variables || []).map(v => [v.ref, v]));
       this.sourceMode  = false;
       this.savedRange  = null;
       this.overlay     = null;       // active popup overlay
@@ -278,6 +284,7 @@
       this.pane.style.minHeight = this.minHeight + 'px';
       this.pane.style.maxHeight = this.maxHeight + 'px';
       this.pane.innerHTML = this.initValue;
+      this._chipifyVariables();
       // Enter vytváří <p> místo <div>
       document.execCommand('defaultParagraphSeparator', false, 'p');
       this.w.appendChild(this.pane);
@@ -579,6 +586,12 @@
       maybeNewRow('specialchar'); if (this._hasGroup('specialchar')) {
         addSep();
         addBtn(this._btn('specialchar', 'Vložit speciální znak', 'specialchar', () => this._showSpecialCharPicker()));
+      }
+
+      // ── Variables ─────────────────────────────────────────────────────────
+      maybeNewRow('variables'); if (this._hasGroup('variables') && this.variables && this.variables.length) {
+        addSep();
+        addBtn(this._btn('variables', 'Vložit proměnnou', 'variables', () => this._showVariablePicker()));
       }
 
       // ── HR ────────────────────────────────────────────────────────────────
@@ -907,8 +920,155 @@
             } catch (_) {}
           }
         }
-        this.input.value = this.pane.innerHTML;
+        this.input.value = this._serialize();
       }
+    }
+
+    // ── Variables ────────────────────────────────────────────────────────────
+
+    /** the pane's HTML as it's stored: variable chips back as plain placeholders */
+    _serialize() {
+      if (!this.variables || !this.pane.querySelector('.phx-editor-var')) {
+        return this.pane.innerHTML;
+      }
+      const clone = this.pane.cloneNode(true);
+      clone.querySelectorAll('.phx-editor-var').forEach(chip => {
+        chip.replaceWith(document.createTextNode(this._placeholder(chip.dataset.var)));
+      });
+      return clone.innerHTML;
+    }
+
+    _placeholder(ref) {
+      return this.variableFormat.replace('%s', ref);
+    }
+
+    /** a placeholder → an atomic chip with the variable's label */
+    _makeVariableChip(ref) {
+      const v = this.variableMap.get(ref);
+      const chip = el('span', {
+        cls: 'phx-editor-var' + (v ? '' : ' is-unknown'),
+        contenteditable: 'false',
+        data: { var: ref },
+        text: v ? v.label : ref,
+      });
+      chip.title = this._placeholder(ref) + (v ? (v.group ? ' – ' + v.group + ': ' : ' – ') + v.label : ' – neznámá proměnná');
+      return chip;
+    }
+
+    /** placeholders in the pane's text → chips (on load and after the source view) */
+    _chipifyVariables() {
+      if (!this.variables) return;
+      const [before, after] = this.variableFormat.split('%s');
+      const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[\\s\\u00a0]*');
+      const re = new RegExp(esc(before) + '([a-z0-9][a-z0-9_-]*\\.[a-z0-9][a-z0-9_-]*)' + esc(after), 'gi');
+      const walker = this._walker(this.pane, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (!node.parentElement.closest('.phx-editor-var, pre, code')) {
+          re.lastIndex = 0;
+          if (re.test(node.nodeValue)) nodes.push(node);
+        }
+      }
+      nodes.forEach(node => {
+        const frag = document.createDocumentFragment();
+        const text = node.nodeValue;
+        let last = 0;
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(text)) !== null) {
+          if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+          frag.appendChild(this._makeVariableChip(m[1]));
+          last = m.index + m[0].length;
+        }
+        if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+        node.replaceWith(frag);
+      });
+    }
+
+    /** puts a node at the caret (the saved range) and the caret right after it */
+    _insertAtCaret(node) {
+      this.pane.focus();
+      this._restoreRange(this.savedRange);
+      const sel   = this._sel();
+      const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+      if (range && this.pane.contains(range.commonAncestorContainer)) {
+        range.deleteContents();
+        range.insertNode(node);
+      } else {
+        let p = this.pane.lastElementChild;
+        if (!p || p.tagName !== 'P') { p = el('p'); this.pane.appendChild(p); }
+        p.appendChild(node);
+      }
+      // the caret can't sit in a contenteditable="false" node — after it, in a text node
+      let after = node.nextSibling;
+      if (!after || after.nodeType !== 3) {
+        after = document.createTextNode('\u00a0');
+        node.after(after);
+      }
+      const newRange = document.createRange();
+      newRange.setStart(after, after.nodeValue.startsWith('\u00a0') ? 1 : 0);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+      this._sync();
+      this._updateState();
+    }
+
+    _showVariablePicker() {
+      this.savedRange = this._saveRange();
+      this._popup({
+        title: 'Vložit proměnnou',
+        extra: (body) => {
+          const search = el('input', { type: 'search', cls: (this.cls.popupInput || '') + ' phx-editor-var-search', placeholder: 'Hledat proměnnou…' });
+          const list   = el('div', { cls: 'phx-editor-var-list' });
+          const hint   = el('div', { cls: 'phx-editor-sc-hint', text: 'Na webu se místo proměnné zobrazí její hodnota.' });
+
+          const render = () => {
+            const q = search.value.trim().toLowerCase();
+            list.innerHTML = '';
+            const groups = new Map();
+            this.variables
+              .filter(v => !q || (v.label + ' ' + v.group + ' ' + v.ref).toLowerCase().includes(q))
+              .forEach(v => {
+                if (!groups.has(v.group)) groups.set(v.group, []);
+                groups.get(v.group).push(v);
+              });
+            if (!groups.size) {
+              list.appendChild(el('div', { cls: 'phx-editor-var-empty', text: 'Žádná proměnná neodpovídá.' }));
+            }
+            groups.forEach((vars, group) => {
+              if (group) list.appendChild(el('div', { cls: 'phx-editor-var-group', text: group }));
+              vars.forEach(v => {
+                const btn = el('button', { type: 'button', cls: 'phx-editor-var-item' });
+                btn.appendChild(el('span', { cls: 'phx-editor-var-item-label', text: v.label }));
+                btn.appendChild(el('code', { cls: 'phx-editor-var-item-ref', text: this._placeholder(v.ref) }));
+                btn.addEventListener('mousedown', e => e.preventDefault());
+                btn.addEventListener('click', () => {
+                  this._closePopup();
+                  this._insertAtCaret(this._makeVariableChip(v.ref));
+                });
+                list.appendChild(btn);
+              });
+            });
+          };
+
+          search.addEventListener('input', render);
+          search.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              list.querySelector('.phx-editor-var-item')?.click();
+            }
+          });
+          render();
+          body.appendChild(search);
+          body.appendChild(list);
+          body.appendChild(hint);
+          setTimeout(() => search.focus(), 0);
+        },
+        confirm: null,
+        onConfirm: () => {}
+      });
     }
 
     // ── Block styles ─────────────────────────────────────────────────────────
@@ -1433,13 +1593,14 @@
     _toggleSource() {
       this.sourceMode = !this.sourceMode;
       if (this.sourceMode) {
-        this.srcPane.value = this.pane.innerHTML;
+        this.srcPane.value = this._serialize();
         this.pane.style.display    = 'none';
         this.srcPane.style.display = 'block';
         this._hideGridFloat();
         this._hideTableFloat();
       } else {
         this.pane.innerHTML        = this.srcPane.value;
+        this._chipifyVariables();
         this.input.value           = this.srcPane.value;
         this.pane.style.display    = 'block';
         this.srcPane.style.display = 'none';

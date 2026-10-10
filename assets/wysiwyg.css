@@ -1381,3 +1381,89 @@ body.phx-editor-fullscreen-open {
   color: var(--bs-body-color, #212529) !important;
   border-color: var(--bs-border-color, #dee2e6) !important;
 }
+
+/* =========================================================================
+   Variables (EditorInput::setVariables()) — placeholders shown as chips
+   ========================================================================= */
+.phx-editor-var {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  margin: 0 0.1em;
+  padding: 0 0.45em;
+  border-radius: 999px;
+  background: rgba(79,110,247,0.12);
+  color: var(--phx-editor-accent);
+  font-size: 0.9em;
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: baseline;
+  cursor: default;
+  user-select: all;
+}
+.phx-editor-var::before {
+  content: '{ }';
+  font-family: var(--phx-editor-mono);
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+.phx-editor-var.is-unknown {
+  background: rgba(255,107,107,0.14);
+  color: var(--phx-editor-danger);
+}
+
+.phx-editor-var-search {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--phx-editor-ed-border);
+  border-radius: 6px;
+  font: inherit;
+  background: var(--phx-editor-ed-bg);
+  color: var(--phx-editor-ed-text);
+}
+.phx-editor-var-list {
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 340px;
+}
+.phx-editor-var-group {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.phx-editor-var-group:first-child { margin-top: 0; }
+.phx-editor-var-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.phx-editor-var-item:hover,
+.phx-editor-var-item:focus-visible {
+  background: rgba(79,110,247,0.1);
+  outline: none;
+}
+.phx-editor-var-item-ref {
+  font-family: var(--phx-editor-mono);
+  font-size: 11px;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+.phx-editor-var-empty {
+  padding: 8px;
+  opacity: 0.6;
+}

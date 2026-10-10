@@ -14,6 +14,7 @@ Podrobná referenční dokumentace k `phloxcz/forms-editor`. Rychlý start najde
 - [Upload obrázků — `ImageUploadTrait`](#upload-obrázků--imageuploadtrait)
 - [Klientská část (JS)](#klientská-část-js)
 - [Vkládání vlastních widgetů](#vkládání-vlastních-widgetů)
+- [Proměnné](#proměnné)
 - [Klávesové zkratky](#klávesové-zkratky)
 - [Bootstrap Grid builder](#bootstrap-grid-builder)
 - [Bezpečnost](#bezpečnost)
@@ -93,6 +94,7 @@ Všechny settery jsou fluentní (vrací `static`).
 | `setMinHeight(int $px): static` | Minimální výška editační plochy v px (výchozí `300`). |
 | `setMaxHeight(int $px): static` | Maximální výška editační plochy v px (výchozí `700`). |
 | `setToolbar(array ...$rows): static` | Které skupiny toolbaru zobrazit; jedno pole = jeden řádek, více polí = toolbar rozdělený do více řádků. Neplatné skupiny se tiše ignorují. |
+| `setVariables(array $variables, string $format = '{{ %s }}'): static` | Proměnné, které editor nabídne k vložení (skupina `TB_VARIABLES`) — viz [Proměnné](#proměnné). |
 
 ### Příklad — vlastní toolbar ve dvou řádcích
 
@@ -138,6 +140,7 @@ $form->addEditor('perex', 'Perex')
 | `TB_TABLE` | Vizuální tabulkový builder (výběr mřížky až 8×8). |
 | `TB_EMOJI` | Emoji picker. |
 | `TB_SPECIALCHAR` | Picker speciálních znaků. |
+| `TB_VARIABLES` | Výběr proměnné k vložení (jen když jsou nastavené přes `setVariables()`). |
 | `TB_HR` | Vodorovná linka. |
 | `TB_CLEARFMT` | Vyčištění formátování vybraného textu. |
 | `TB_GRID` | Bootstrap 5.3 Grid builder. |
@@ -303,6 +306,36 @@ $finalHtml = $dom->saveHTML();
 ```
 
 > **Důležité:** `HTML.AllowedAttributes` v HTMLPurifier musí obsahovat `div.data-widget` a `div.data-id`, jinak sanitizace atributy (a tím i informaci, který widget vložit) odstraní ještě předtím, než se dostanete k parsování. Viz [Bezpečnost](#bezpečnost).
+
+---
+
+## Proměnné
+
+Editor umí vkládat zástupné značky proměnných, které aplikace při vykreslení obsahu nahradí hodnotou — např. telefon nebo IČO, které se mění na jednom místě a projeví se ve všech textech.
+
+```php
+$form->addEditor('content', 'Obsah')
+    ->setToolbar([EditorInput::TB_FORMAT, EditorInput::TB_LINK, EditorInput::TB_VARIABLES])
+    ->setVariables([
+        ['ref' => 'shop.phone', 'label' => 'Telefon', 'group' => 'Prodávající'],
+        ['ref' => 'shop.company-id', 'label' => 'IČO', 'group' => 'Prodávající'],
+        ['ref' => 'site.name', 'label' => 'Název webu', 'group' => 'Web'],
+    ]);
+```
+
+- `ref` má tvar `sada.proměnná` (písmena, číslice, `-`, `_`); `label` je text pro uživatele, `group` nadpis skupiny ve výběru.
+- Tlačítko `TB_VARIABLES` otevře výběr s hledáním; vybraná proměnná se vloží na místo kurzoru.
+- V editoru se značka zobrazuje jako needitovatelný štítek s názvem proměnné (najetím myši je vidět i značka). Do uložené hodnoty — a do zdrojového kódu — se zapisuje jako prostý text podle formátu, výchozí `{{ ref }}`:
+
+```html
+<p>Volejte {{ shop.phone }}, rádi poradíme.</p>
+```
+
+- Značky, které už v textu jsou (i ručně napsané nebo vložené ze zdroje), se při načtení a po návratu ze zdrojového kódu převedou na štítky. Značka s `ref`, který v seznamu není, se zobrazí jako štítek označený jako neznámý.
+- Bez `setVariables()` editor značky nijak nezpracovává — zůstanou obyčejným textem.
+- Jiný zápis značky nastavíte druhým parametrem, např. `setVariables($vars, '[[%s]]')`.
+
+Nahrazení hodnotami je na aplikaci — editor pouze vkládá značky.
 
 ---
 

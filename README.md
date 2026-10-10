@@ -29,6 +29,7 @@ Plnohodnotný WYSIWYG editor pro **Nette Framework** s podporou **Bootstrap 5.3 
 | **</>** | Přepínač WYSIWYG ↔ raw HTML zdrojový kód |
 | **⛶** | Fullscreen režim |
 | **🧩** | Vkládání vlastních widgetů (`window.PhloxEditor.insertWidget()`) — pro anketu, embed apod. vykreslené na serveru |
+| **{ }** | Vkládání proměnných (`setVariables()`) — značky `{{ sada.proměnná }}` zobrazené jako štítky, hodnotu doplní aplikace |
 | **⌨** | Klávesové zkratky (Ctrl+B/I/U, Ctrl+Shift+S, Tab v `<pre>`) |
 
 Tři vestavěná témata (`THEME_DEFAULT`, `THEME_BOOTSTRAP`, `THEME_TAILWIND`) a plně konfigurovatelný toolbar — podrobnosti v [dokumentaci](docs/README.md#témata).
