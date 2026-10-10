@@ -203,19 +203,20 @@ class EditorInput extends BaseControl
      */
     public function setVariables(array $variables, string $format = '{{ %s }}'): static
     {
+        if (!str_contains($format, '%s')) {
+            throw new \InvalidArgumentException('The variable format must contain "%s" for the reference.');
+        }
+
         $this->variables = [];
         foreach ($variables as $v) {
-            $ref = (string) ($v['ref'] ?? '');
+            $ref = $v['ref'];
             if (preg_match('~^[a-z0-9][a-z0-9_-]*\.[a-z0-9][a-z0-9_-]*$~i', $ref)) {
                 $this->variables[] = [
                     'ref'   => $ref,
-                    'label' => (string) ($v['label'] ?? $ref),
-                    'group' => (string) ($v['group'] ?? ''),
+                    'label' => $v['label'] ?? $ref,
+                    'group' => $v['group'] ?? '',
                 ];
             }
-        }
-        if (!str_contains($format, '%s')) {
-            throw new \InvalidArgumentException('The variable format must contain "%s" for the reference.');
         }
         $this->variableFormat = $format;
         return $this;

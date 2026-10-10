@@ -40,6 +40,38 @@ Assert::same('/editor/upload', $el->getAttribute('data-upload-url'));
 Assert::same('<p>test</p>',    $el->getAttribute('data-value'));
 Assert::same('body',           $el->getAttribute('data-name'));
 
+// ── Test: no variables → no variable data attributes ──────────────────────
+Assert::null($el->getAttribute('data-variables'));
+Assert::null($el->getAttribute('data-variable-format'));
+
+// ── Test: setVariables() — invalid refs dropped, label / group defaults ───
+$ret = $control->setVariables([
+    ['ref' => 'shop.phone', 'label' => 'Telefon', 'group' => 'Prodávající'],
+    ['ref' => 'site.name'],
+    ['ref' => 'no-dot'],
+    ['ref' => 'bad ref.x'],
+]);
+Assert::same($control, $ret);
+$el = $control->getControl();
+Assert::same([
+    ['ref' => 'shop.phone', 'label' => 'Telefon', 'group' => 'Prodávající'],
+    ['ref' => 'site.name', 'label' => 'site.name', 'group' => ''],
+], json_decode($el->getAttribute('data-variables'), true));
+Assert::same('{{ %s }}', $el->getAttribute('data-variable-format'));
+
+// ── Test: setVariables() — an empty list still turns the feature on ───────
+$control->setVariables([], '[[%s]]');
+$el = $control->getControl();
+Assert::same('[]', $el->getAttribute('data-variables'));
+Assert::same('[[%s]]', $el->getAttribute('data-variable-format'));
+
+// ── Test: setVariables() — a format without %s is refused, nothing changes ─
+Assert::exception(
+    fn() => $control->setVariables([['ref' => 'a.b']], '{{ }}'),
+    \InvalidArgumentException::class,
+);
+Assert::same('[]', $control->getControl()->getAttribute('data-variables'));
+
 // ── Test: register() adds a custom method name to Container ───────────────
 EditorInput::register('addEditorTest');
 $form2 = new Form;
