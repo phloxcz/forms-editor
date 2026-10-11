@@ -214,6 +214,8 @@
   // editor so callers can omit the field name in the common single-editor case.
   const instances = new Map();
   let activeInstance = null;
+  // every live editor by its wrapper element (instances holds only named ones)
+  const live = new Map();
 
   class PhloxEditor {
 
@@ -259,6 +261,7 @@
 
       if (this.fieldName) instances.set(this.fieldName, this);
       activeInstance = this;
+      live.set(wrapper, this);
     }
 
     // ── Render ──────────────────────────────────────────────────────────────
@@ -697,7 +700,8 @@
 
       this.srcPane.addEventListener('input', () => { this.input.value = this.srcPane.value; });
 
-      document.addEventListener('click', e => {
+      // document-level listeners are remembered so destroy() can remove them
+      this._docClick = e => {
         const inGrid  = this.gridFloat?.contains(e.target);
         const inTable = this.tableFloat?.contains(e.target);
         const inImg   = this.imgFloat?.contains(e.target);
@@ -705,14 +709,44 @@
         if (!inGrid  && !inPane) this._hideGridFloat();
         if (!inTable && !inPane) this._hideTableFloat();
         if (!inImg   && !inPane) this._hideImgFloat();
-      });
-
-      document.addEventListener('keydown', e => {
-        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+      };
+      this._docKeydown = e => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'S' && this.w.contains(document.activeElement)) {
           e.preventDefault();
           this._toggleSource();
         }
-      });
+      };
+      document.addEventListener('click', this._docClick);
+      document.addEventListener('keydown', this._docKeydown);
+    }
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
+
+    /** Has the value changed since the editor was created (or markClean())? */
+    isDirty() {
+      return this.input.value !== this.initValue;
+    }
+
+    /** The current value becomes the clean one (e.g. after saving via AJAX). */
+    markClean() {
+      this.initValue = this.input.value;
+    }
+
+    /**
+     * Tears the editor down: document listeners, an open popup (it lives on
+     * <body>), fullscreen, the registry. Called for editors removed from the
+     * page (AJAX snippet replaced) — see destroyIn() and hookNaja().
+     */
+    destroy() {
+      if (this.destroyed) return;
+      this.destroyed = true;
+      document.removeEventListener('click', this._docClick);
+      document.removeEventListener('keydown', this._docKeydown);
+      this._closePopup?.();
+      if (this.isFullscreen) document.body.classList.remove('phx-editor-fullscreen-open');
+      if (this.fieldName && instances.get(this.fieldName) === this) instances.delete(this.fieldName);
+      if (activeInstance === this) activeInstance = null;
+      live.delete(this.w);
     }
 
     _handleKeydown(e) {
@@ -2504,33 +2538,89 @@
   // Init
   // =========================================================================
 
+  function wrappersIn(root, selector) {
+    const found = [...root.querySelectorAll(selector)];
+    if (root.matches?.(selector)) found.unshift(root);
+    return found;
+  }
+
   function initAll(root) {
-    root.querySelectorAll('.phx-editor-wrapper:not([data-phx-editor-init])').forEach(w => {
+    wrappersIn(root || document, '.phx-editor-wrapper:not([data-phx-editor-init])').forEach(w => {
       w.dataset.phxEditorInit = '1';
       new PhloxEditor(w);
     });
   }
 
-  // Standard page load
-  document.addEventListener('DOMContentLoaded', () => initAll(document));
-
-  // Naja 3.x
-  if (window.naja) {
-    window.naja.addEventListener('complete', () => initAll(document));
+  /** Destroys the editors inside root (and root itself) — before replacing that part of the page. */
+  function destroyIn(root) {
+    for (const [wrapper, instance] of [...live]) {
+      if (root === document || root.contains(wrapper)) instance.destroy();
+    }
   }
 
-  // MutationObserver — catches snippets injected after load (Naja, htmx, custom AJAX)
+  /** Destroys editors no longer in the document (removed by any AJAX library). */
+  function destroyDetached() {
+    for (const [wrapper, instance] of [...live]) {
+      if (!wrapper.isConnected) instance.destroy();
+    }
+  }
+
+  /** Any editor inside root (default: the page) with unsaved changes? */
+  function isDirty(root) {
+    for (const [wrapper, instance] of live) {
+      if ((!root || root === document || root.contains(wrapper)) && instance.isDirty()) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Naja 3: editors in a snippet are destroyed before it's replaced and
+   * created in the new content after — the same way components-grid hooks in:
+   *
+   *   import naja from 'naja';
+   *   import './wysiwyg.js';
+   *   naja.initialize();
+   *   window.PhloxEditor.hookNaja(naja);
+   *
+   * Hooked automatically when window.naja exists on DOMContentLoaded.
+   */
+  let hookedNaja = null;
+  function hookNaja(naja) {
+    if (!naja || hookedNaja === naja) return;
+    hookedNaja = naja;
+    naja.snippetHandler.addEventListener('beforeUpdate', ({ detail }) => {
+      if (detail.snippet instanceof Element) destroyIn(detail.snippet);
+    });
+    naja.snippetHandler.addEventListener('afterUpdate', ({ detail }) => {
+      if (detail.snippet instanceof Element) initAll(detail.snippet);
+    });
+  }
+
+  // Standard page load
+  document.addEventListener('DOMContentLoaded', () => {
+    initAll(document);
+    if (window.naja) hookNaja(window.naja);
+  });
+
+  // MutationObserver — catches content injected after load by any AJAX
+  // library (htmx, custom…): new editors are created, removed ones destroyed
   new MutationObserver((mutations) => {
+    let removed = false;
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (node.nodeType === 1) initAll(/** @type {Element} */ (node));
       }
+      removed = removed || m.removedNodes.length > 0;
     }
+    if (removed && live.size) destroyDetached();
   }).observe(document.body, { childList: true, subtree: true });
 
   // Expose for manual use
   global.PhloxEditor = {
     init: initAll,
+    destroy: destroyIn,
+    isDirty,
+    hookNaja,
     PhloxEditor,
     instances,
 

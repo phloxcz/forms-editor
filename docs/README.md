@@ -239,10 +239,45 @@ $form->addEditor('content', 'Obsah')
 Editor se automaticky inicializuje na každém `.phx-editor-wrapper` (přesně to, co vykreslí `EditorInput::getControl()`):
 
 - při `DOMContentLoaded`
-- po dokončení Naja (`window.naja`) AJAX requestu, pokud je Naja na stránce přítomna
+- po aktualizaci Naja snippetu (viz [Naja](#naja))
 - přes `MutationObserver` na `document.body` — zachytí i markup vložený jinými AJAX/knihovnami (htmx, vlastní kód)
 
 Element, který byl již inicializován, má `data-phx-editor-init="1"` a znovu se needituje.
+
+Editor odebraný ze stránky (nahrazený snippet) se sám zruší (`destroy()`): odpojí posluchače na `document`, zavře otevřený popup (ten je na `<body>`), ukončí celoobrazovkový režim a vypadne z registru `instances`.
+
+### Naja
+
+Napojení ve stejném duchu jako `components-grid` — editory ve snippetu se před nahrazením zruší a v novém obsahu vytvoří:
+
+```js
+import naja from 'naja';
+import '../vendor/phloxcz/forms-editor/assets/wysiwyg.js';
+
+naja.initialize();
+window.PhloxEditor.hookNaja(naja);
+```
+
+Je-li `window.naja` k dispozici už při `DOMContentLoaded`, napojí se samo. Historii (zpět/vpřed) nechte načítat ze serveru (`snippetCache: false`) — uložený HTML snapshot by obsahoval už sestavený editor, který se znovu neinicializuje.
+
+### Neuložené změny
+
+```js
+window.PhloxEditor.isDirty();            // má některý editor na stránce neuložené změny?
+window.PhloxEditor.isDirty(container);   // jen uvnitř kontejneru
+instance.isDirty();                      // jedna instance
+instance.markClean();                    // aktuální hodnota je nově „uložená“ (např. po uložení přes AJAX)
+```
+
+Typické použití — varování před AJAXovou navigací (`beforeunload` se při ní nespustí):
+
+```js
+naja.addEventListener('before', (e) => {
+    if (e.detail.method === 'GET' && window.PhloxEditor.isDirty() && !confirm('Máte neuložené změny. Odejít?')) {
+        e.preventDefault();
+    }
+});
+```
 
 ### Manuální (re-)inicializace
 
@@ -250,6 +285,9 @@ Element, který byl již inicializován, má `data-phx-editor-init="1"` a znovu 
 // inicializuje všechny dosud neinicializované .phx-editor-wrapper uvnitř zadaného kořene
 window.PhloxEditor.init(document);
 window.PhloxEditor.init(someContainerElement);
+
+// zruší editory uvnitř kořene (před ručním nahrazením obsahu)
+window.PhloxEditor.destroy(someContainerElement);
 
 // přístup ke třídě samotné, pokud potřebujete instanci přímo
 const instance = new window.PhloxEditor.PhloxEditor(wrapperElement);
