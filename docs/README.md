@@ -307,19 +307,46 @@ Editor umí na pozici kurzoru vložit atomický, needitovatelný placeholder pro
 
 Element je běžný `<div>` s `data-*` atributy (viz [úvaha o výběru elementu](#bezpečnost) níže) — žádný vlastní HTML tag, aby se nekomplikovala sanitizace a zpracování na serveru. `contenteditable="false"` z něj dělá pro prohlížeč atomickou jednotku: nejde do něj psát, šipky a Backspace/Delete ho smažou/přeskočí jako celek.
 
+### Nabídka widgetů v editoru, nastavení a náhledy
+
+S `setWidgets()` editor nabízí widgety aplikace v liště (skupina `TB_WIDGETS`). Sám jen umísťuje placeholdery — nastavení widgetu je věc aplikace:
+
+```php
+$form->addEditor('content', 'Obsah')
+    ->setWidgets([
+        ['type' => 'gallery', 'label' => 'Galerie', 'icon' => '🖼', 'block' => true],
+        ['type' => 'poll',    'label' => 'Anketa', 'group' => 'Interaktivní', 'block' => true],
+    ], previewUrl: $this->link('Widgets:preview'));
+```
+
+- **Nastavení:** výběr widgetu v nabídce i kliknutí na placeholder v textu vyvolá na wrapperu (probublávající) událost `phx-editor:widget`. Aplikace v ní zobrazí svůj formulář nastavení a odpoví přes detail události:
+
+```js
+document.addEventListener('phx-editor:widget', ({ detail }) => {
+    // detail.type, detail.widget (definice ze setWidgets), detail.data (null = nový), detail.element
+    detail.save({ images: '[12,15,18]', columns: '3' }, 'Galerie · 3 fotky'); // vloží / upraví
+    detail.remove();  // odebere existující placeholder
+    detail.done();    // nastavení zavřeno bez uložení
+});
+```
+
+  Data jsou `data-*` atributy placeholderu (klíče v camelCase → `data-kebab-case`, objekt nebo pole se uloží jako JSON). `detail.data` je vrací zpět jako řetězce.
+- **Blokové widgety** (`block: true`) se vkládají na samostatný řádek mezi odstavce (prázdný odstavec nahradí), ostatní do textu na pozici kurzoru.
+- **Náhledy:** s `previewUrl` editor při načtení (a po vložení / úpravě) pošle `POST {"widgets": [{"type", "data"}, …]}` jako JSON a čeká `{"previews": ["<html>" | null, …]}` ve stejném pořadí. Náhled se jen zobrazí uvnitř placeholderu — uložená hodnota i zdrojový kód obsahují placeholder s jeho textem (`detail.save(…, label)`).
+
 ### Vložení z JS
 
 ```js
 // vloží do naposledy fokusovaného editoru na stránce
-window.PhloxEditor.insertWidget('poll', 5, 'Anketa #5');
+window.PhloxEditor.insertWidget('poll', { id: 5 }, 'Anketa #5');
 
 // vloží do konkrétního pole podle jeho jména ve formuláři (data-name / EditorInput field name)
-window.PhloxEditor.insertWidget('poll', 5, 'Anketa #5', 'content');
+window.PhloxEditor.insertWidget('poll', { id: 5 }, 'Anketa #5', 'content');
 ```
 
-`fieldName` je volitelný čtvrtý parametr — pokud ho vynecháte, cílí se na editor, který byl naposledy fokusován (funguje i po kliknutí mimo editor, protože si při ztrátě fokusu ukládá pozici kurzoru). Pokud na stránce může být více editorů a chcete mít jistotu, cílujte explicitně přes jméno pole. Metoda vrací `false` a vypíše konzolové varování, pokud se nenajde žádná cílová instance.
+Druhý parametr jsou data placeholderu; samotná hodnota (dřívější API) se uloží jako `data-id`. `fieldName` je volitelný čtvrtý parametr — pokud ho vynecháte, cílí se na editor, který byl naposledy fokusován (funguje i po kliknutí mimo editor, protože si při ztrátě fokusu ukládá pozici kurzoru). Pokud na stránce může být více editorů a chcete mít jistotu, cílujte explicitně přes jméno pole. Metoda vrací `false` a vypíše konzolové varování, pokud se nenajde žádná cílová instance.
 
-Vlastní vzhled placeholderu lze upravit přes klíč `widget` v [mapě témat](#témata) (`.phx-editor-widget` je výchozí CSS třída).
+Vlastní vzhled placeholderu lze upravit přes klíče `widget` a `widgetBlock` v [mapě témat](#témata) (`.phx-editor-widget` a `.phx-editor-widget-block` jsou výchozí CSS třídy).
 
 ### Zpracování na serveru
 

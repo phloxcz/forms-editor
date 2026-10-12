@@ -28,7 +28,7 @@ Plnohodnotný WYSIWYG editor pro **Nette Framework** s podporou **Bootstrap 5.3 
 | **😀** | Emoji picker, výběr speciálních znaků |
 | **</>** | Přepínač WYSIWYG ↔ raw HTML zdrojový kód |
 | **⛶** | Fullscreen režim |
-| **🧩** | Vkládání vlastních widgetů (`window.PhloxEditor.insertWidget()`) — pro anketu, embed apod. vykreslené na serveru |
+| **🧩** | Vkládání vlastních widgetů (`setWidgets()`, `window.PhloxEditor.insertWidget()`) — nabídka v liště, nastavení v aplikaci, náhledy ze serveru; anketa, galerie apod. vykreslené na serveru |
 | **{ }** | Vkládání proměnných (`setVariables()`) — značky `{{ sada.proměnná }}` zobrazené jako štítky, hodnotu doplní aplikace |
 | **⌨** | Klávesové zkratky (Ctrl+B/I/U, Ctrl+Shift+S, Tab v `<pre>`) |
 

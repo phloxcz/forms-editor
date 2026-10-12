@@ -198,6 +198,35 @@
 }
 .phx-editor-widget::before { content: '\1F9E9'; /* puzzle piece */ }
 
+/* a block widget (setWidgets(): block) — a line of its own, with its preview from the application */
+.phx-editor-widget-block {
+  display: block;
+  margin: 0.75em 0;
+  padding: 0.6em 0.8em;
+}
+.phx-editor-wrapper[data-widgets] .phx-editor-widget { cursor: pointer; }
+.phx-editor-wrapper[data-widgets] .phx-editor-widget:hover,
+.phx-editor-widget[data-phx-editing] {
+  border-style: solid;
+  border-color: var(--phx-editor-accent);
+}
+.phx-editor-widget:has(> .phx-editor-widget-preview)::before { display: none; }
+/* the preview is only shown: clicks go to the placeholder (its settings) */
+.phx-editor-widget-preview {
+  pointer-events: none;
+  width: 100%;
+}
+.phx-editor-widget-item-icon {
+  flex-shrink: 0;
+  width: 1.4em;
+  text-align: center;
+}
+/* icon and label side by side (the variable picker's items spread theirs apart) */
+.phx-editor-var-item.phx-editor-widget-item {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
 /* Tables */
 .phx-editor-editor table {
   width: 100%;

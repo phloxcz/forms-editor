@@ -91,6 +91,8 @@ class EditorInput extends BaseControl
     public const TB_SPECIALCHAR = 'specialchar';
     /** Variable picker — inserts {{ ref }} placeholders, see setVariables(); hidden without variables */
     public const TB_VARIABLES   = 'variables';
+    /** Widget picker — the application's widgets, see setWidgets(); hidden without widgets */
+    public const TB_WIDGETS     = 'widgets';
     /** Horizontal rule */
     public const TB_HR          = 'hr';
     /** Clear formatting */
@@ -120,6 +122,7 @@ class EditorInput extends BaseControl
         self::TB_EMOJI,
         self::TB_SPECIALCHAR,
         self::TB_VARIABLES,
+        self::TB_WIDGETS,
         self::TB_HR,
         self::TB_CLEARFMT,
         self::TB_GRID,
@@ -172,6 +175,9 @@ class EditorInput extends BaseControl
     /** @var list<array{ref: string, label: string, group: string}>|null null = no variable support */
     private ?array  $variables    = null;
     private string  $variableFormat = '{{ %s }}';
+    /** @var list<array{type: string, label: string, group: string, icon: string, block: bool}>|null null = no widget picker */
+    private ?array  $widgets      = null;
+    private string  $widgetPreviewUrl = '';
 
     public function __construct(string $label = '')
     {
@@ -223,6 +229,57 @@ class EditorInput extends BaseControl
     }
 
 
+    /**
+     * Widgets the editor offers to insert (toolbar group TB_WIDGETS).
+     *
+     * A widget is an atomic placeholder in the text — <div data-widget="type"
+     * data-…> — that the application replaces with the rendered widget; its
+     * other data-* attributes are the widget's settings. The editor only
+     * places and shows placeholders: choosing a widget in the picker, or
+     * clicking one in the text, dispatches a "phx-editor:widget" event
+     * (bubbling, on the wrapper) for the application to ask for the settings
+     * and answer through the event's detail:
+     *
+     *   wrapper.addEventListener('phx-editor:widget', ({ detail }) => {
+     *       // detail.type, detail.data (null for a new one), detail.widget (its definition)
+     *       detail.save({ count: '3' }, 'Galerie · 3 fotky');   // inserts / updates
+     *       detail.remove();                                   // an existing one
+     *   });
+     *
+     *   ->setWidgets([
+     *       ['type' => 'gallery', 'label' => 'Galerie', 'icon' => '🖼', 'block' => true],
+     *       ['type' => 'poll',    'label' => 'Anketa', 'group' => 'Interaktivní', 'block' => true],
+     *   ], previewUrl: $presenter->link('Widgets:preview'))
+     *
+     * block: a widget on a line of its own (between paragraphs), else inside text.
+     *
+     * $previewUrl: placeholders show what the widget looks like — the editor
+     * POSTs {"widgets": [{"type", "data"}, …]} as JSON and expects
+     * {"previews": ["<html>" | null, …]} in the same order (null: the label
+     * stays). The preview is only shown: the stored HTML and the source view
+     * have the placeholder with its label as text.
+     *
+     * @param list<array{type: string, label?: string, group?: string, icon?: string, block?: bool}> $widgets
+     */
+    public function setWidgets(array $widgets, string $previewUrl = ''): static
+    {
+        $this->widgets = [];
+        foreach ($widgets as $w) {
+            if (preg_match('~^[a-z][a-z0-9-]*$~i', $w['type'])) {
+                $this->widgets[] = [
+                    'type'  => $w['type'],
+                    'label' => $w['label'] ?? $w['type'],
+                    'group' => $w['group'] ?? '',
+                    'icon'  => $w['icon'] ?? '',
+                    'block' => (bool) ($w['block'] ?? false),
+                ];
+            }
+        }
+        $this->widgetPreviewUrl = $previewUrl;
+        return $this;
+    }
+
+
     /** URL of the image-upload endpoint. */
     public function setUploadRoute(string $url): static
     {
@@ -266,7 +323,8 @@ class EditorInput extends BaseControl
      *   popupActions — footer row with action buttons
      *   popupCancel  — cancel / close button
      *   popupConfirm — primary confirm button
-     *   widget       — atomic custom-widget placeholder inserted via insertWidget()
+     *   widget       — atomic custom-widget placeholder inserted via insertWidget() (inline)
+     *   widgetBlock  — the same for a block widget (a line of its own, with its preview)
      *   bsModal      — bool (pass '1'/'0') — render popup as Bootstrap modal structure
      *
      * @param string|array<string,string> $theme  THEME_* constant or partial class map
@@ -377,7 +435,9 @@ class EditorInput extends BaseControl
             ->data('max-height',    $this->maxHeight)
             ->data('color-scheme',  $this->colorScheme)
             ->data('variables',     $this->variables !== null ? json_encode($this->variables, JSON_UNESCAPED_UNICODE) : null)
-            ->data('variable-format', $this->variables !== null ? $this->variableFormat : null);
+            ->data('variable-format', $this->variables !== null ? $this->variableFormat : null)
+            ->data('widgets',       $this->widgets !== null ? json_encode($this->widgets, JSON_UNESCAPED_UNICODE) : null)
+            ->data('widget-preview-url', $this->widgets !== null && $this->widgetPreviewUrl !== '' ? $this->widgetPreviewUrl : null);
     }
 
     public function getLabel(string|\Stringable|null $caption = null): Html|string|null
@@ -442,6 +502,7 @@ class EditorInput extends BaseControl
             'popupCancel'  => 'phx-editor-popup-btn phx-editor-popup-btn-secondary',
             'popupConfirm' => 'phx-editor-popup-btn phx-editor-popup-btn-primary',
             'widget'       => 'phx-editor-widget',
+            'widgetBlock'  => 'phx-editor-widget phx-editor-widget-block',
             'bsModal'      => false,
         ];
 
@@ -477,6 +538,7 @@ class EditorInput extends BaseControl
                 'popupCancel'  => 'btn btn-secondary',
                 'popupConfirm' => 'btn btn-primary',
                 'widget'       => 'phx-editor-widget d-inline-flex align-items-center gap-2 px-2 py-1 rounded border bg-body-tertiary text-body-secondary small',
+                'widgetBlock'  => 'phx-editor-widget phx-editor-widget-block',
                 'bsModal'      => true,
             ],
             self::THEME_TAILWIND => [
@@ -601,6 +663,7 @@ class EditorInput extends BaseControl
                     'border border-dashed border-gray-400 dark:border-gray-600',
                     'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
                 ]),
+                'widgetBlock'  => 'phx-editor-widget phx-editor-widget-block',
                 'bsModal'      => false,
             ],
             default => array_merge($defaults, $this->cssClasses),

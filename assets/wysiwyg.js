@@ -190,6 +190,7 @@
     clearfmt:   '<svg viewBox="0 0 24 24"><path d="M3.27 5L2 6.27l6.97 6.97L6.5 19h3l1.57-3.66L16.73 21 18 19.73 3.27 5zM6 5v.18L8.82 8h2.4l-.72 1.68 2.1 2.1L14.21 8H20V5H6z"/></svg>',
     specialchar: 'Ω',
     variables:   '<svg viewBox="0 0 24 24"><path d="M8 3a3 3 0 0 0-3 3v3.17A2.5 2.5 0 0 1 3 11.5v1a2.5 2.5 0 0 1 2 2.33V18a3 3 0 0 0 3 3h1v-2H8a1 1 0 0 1-1-1v-3.17c0-1-.5-1.9-1.3-2.33.8-.43 1.3-1.33 1.3-2.33V6a1 1 0 0 1 1-1h1V3H8zm8 0h-1v2h1a1 1 0 0 1 1 1v3.17c0 1 .5 1.9 1.3 2.33-.8.43-1.3 1.33-1.3 2.33V18a1 1 0 0 1-1 1h-1v2h1a3 3 0 0 0 3-3v-3.17a2.5 2.5 0 0 1 2-2.33v-1a2.5 2.5 0 0 1-2-2.33V6a3 3 0 0 0-3-3z"/></svg>',
+    widgets:     '<svg viewBox="0 0 24 24"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>',
     hr:          '<svg viewBox="0 0 24 24"><path d="M19 12H5v1.5h14V12zM4 19h16v-1.5H4V19zM4 5v1.5h16V5H4z"/></svg>',
     alignleft:   '<svg viewBox="0 0 24 24"><path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/></svg>',
     aligncenter: '<svg viewBox="0 0 24 24"><path d="M7 15v2h10v-2H7zm-4 6h18v-2H3v2zm0-8h18v-2H3v2zm4-6v2h10V7H7zM3 3v2h18V3H3z"/></svg>',
@@ -249,6 +250,12 @@
       this.variables      = wrapper.dataset.variables ? JSON.parse(wrapper.dataset.variables) : null;
       this.variableFormat = wrapper.dataset.variableFormat || '{{ %s }}';
       this.variableMap    = new Map((this.variables || []).map(v => [v.ref, v]));
+      // Widgets (EditorInput::setWidgets()): null = no picker, placeholders
+      // stay as they are; else clicking one asks the application to edit it
+      this.widgets          = wrapper.dataset.widgets ? JSON.parse(wrapper.dataset.widgets) : null;
+      this.widgetMap        = new Map((this.widgets || []).map(w => [w.type, w]));
+      this.widgetPreviewUrl = wrapper.dataset.widgetPreviewUrl || '';
+      this.previewSeq       = 0;
       this.sourceMode  = false;
       this.savedRange  = null;
       this.overlay     = null;       // active popup overlay
@@ -258,6 +265,7 @@
 
       this._render();
       this._bindEvents();
+      this._loadWidgetPreviews();
 
       if (this.fieldName) instances.set(this.fieldName, this);
       activeInstance = this;
@@ -597,6 +605,12 @@
         addBtn(this._btn('variables', 'Vložit proměnnou', 'variables', () => this._showVariablePicker()));
       }
 
+      // ── Widgets ───────────────────────────────────────────────────────────
+      maybeNewRow('widgets'); if (this._hasGroup('widgets') && this.widgets && this.widgets.length) {
+        addSep();
+        addBtn(this._btn('widgets', 'Vložit widget', 'widgets', () => this._showWidgetPicker()));
+      }
+
       // ── HR ────────────────────────────────────────────────────────────────
       maybeNewRow('hr'); if (this._hasGroup('hr')) {
         addSep();
@@ -688,6 +702,15 @@
       this.pane.addEventListener('focus',   () => { activeInstance = this; this._updateState(); });
       this.pane.addEventListener('blur',    () => { this.savedRange = this._saveRange(); });
       this.pane.addEventListener('paste',   e  => this._handlePaste(e));
+
+      // Widget click: the application edits it (see _editWidget())
+      this.pane.addEventListener('click', e => {
+        const widget = this.widgets && e.target.closest?.('[data-widget]');
+        if (widget && this.pane.contains(widget)) {
+          e.preventDefault();
+          this._editWidget(widget.dataset.widget, widget);
+        }
+      });
 
       // Image click
       this.pane.addEventListener('click', e => {
@@ -960,14 +983,22 @@
 
     // ── Variables ────────────────────────────────────────────────────────────
 
-    /** the pane's HTML as it's stored: variable chips back as plain placeholders */
+    /** the pane's HTML as it's stored: variable chips back as plain placeholders, widgets without their previews */
     _serialize() {
-      if (!this.variables || !this.pane.querySelector('.phx-editor-var')) {
+      const chips     = this.variables && this.pane.querySelector('.phx-editor-var');
+      // previews and the editor's own marks (data-phx-*) stay out
+      const previewed = this.pane.querySelector('[data-phx-label], [data-phx-editing], [data-phx-seq]');
+      if (!chips && !previewed) {
         return this.pane.innerHTML;
       }
       const clone = this.pane.cloneNode(true);
       clone.querySelectorAll('.phx-editor-var').forEach(chip => {
         chip.replaceWith(document.createTextNode(this._placeholder(chip.dataset.var)));
+      });
+      clone.querySelectorAll('[data-widget]').forEach(widget => {
+        if (widget.hasAttribute('data-phx-label')) widget.textContent = widget.getAttribute('data-phx-label');
+        [...widget.attributes].filter(a => a.name.startsWith('data-phx-')).forEach(a => widget.removeAttribute(a.name));
+        if (widget.getAttribute('style') === '') widget.removeAttribute('style'); // left by the browser
       });
       return clone.innerHTML;
     }
@@ -1099,6 +1130,40 @@
           body.appendChild(list);
           body.appendChild(hint);
           setTimeout(() => search.focus(), 0);
+        },
+        confirm: null,
+        onConfirm: () => {}
+      });
+    }
+
+    // ── Widget picker ────────────────────────────────────────────────────────
+
+    _showWidgetPicker() {
+      this.savedRange = this._saveRange();
+      this._popup({
+        title: 'Vložit widget',
+        extra: (body) => {
+          const list   = el('div', { cls: 'phx-editor-var-list phx-editor-widget-list' });
+          const groups = new Map();
+          this.widgets.forEach(w => {
+            if (!groups.has(w.group)) groups.set(w.group, []);
+            groups.get(w.group).push(w);
+          });
+          groups.forEach((widgets, group) => {
+            if (group) list.appendChild(el('div', { cls: 'phx-editor-var-group', text: group }));
+            widgets.forEach(w => {
+              const btn = el('button', { type: 'button', cls: 'phx-editor-var-item phx-editor-widget-item' });
+              if (w.icon) btn.appendChild(el('span', { cls: 'phx-editor-widget-item-icon', text: w.icon }));
+              btn.appendChild(el('span', { cls: 'phx-editor-var-item-label', text: w.label }));
+              btn.addEventListener('mousedown', e => e.preventDefault());
+              btn.addEventListener('click', () => {
+                this._closePopup();
+                this._editWidget(w.type, null);
+              });
+              list.appendChild(btn);
+            });
+          });
+          body.appendChild(list);
         },
         confirm: null,
         onConfirm: () => {}
@@ -1635,6 +1700,7 @@
       } else {
         this.pane.innerHTML        = this.srcPane.value;
         this._chipifyVariables();
+        this._loadWidgetPreviews();
         this.input.value           = this.srcPane.value;
         this.pane.style.display    = 'block';
         this.srcPane.style.display = 'none';
@@ -2487,50 +2553,173 @@
     // ── Widgets ──────────────────────────────────────────────────────────────
 
     /**
-     * Insert an atomic, non-editable widget placeholder at the caret.
-     * Server-side, parse `[data-widget][data-id]` in the saved HTML and
-     * replace each match with the real rendered widget.
+     * Insert an atomic, non-editable widget placeholder at the caret (a block
+     * widget on a line of its own, see setWidgets()). Server-side, parse
+     * `[data-widget]` in the saved HTML and replace each with the rendered
+     * widget; its other data-* attributes are the settings.
      *
-     * @param {string}        type   Widget identifier, e.g. "poll" — becomes data-widget.
-     * @param {string|number} id     Widget id, e.g. 5 — becomes data-id.
-     * @param {string}        [label]  Text shown inside the placeholder (defaults to "type #id").
+     * @param {string}               type   Widget identifier, e.g. "poll" — becomes data-widget.
+     * @param {object|string|number} data   Settings, e.g. {id: 5} → data-id="5" (an object / array
+     *                                      value as JSON); a plain value is the id (older API).
+     * @param {string}               [label]  Text of the placeholder (the stored HTML has it).
+     * @returns {HTMLElement} the placeholder
      */
-    insertWidget(type, id, label) {
+    insertWidget(type, data, label) {
+      if (data === null || typeof data !== 'object') data = { id: data };
+      const def   = this.widgetMap.get(type);
+      const block = !!def?.block;
+      const node  = el('div', {
+        cls: (block ? this.cls.widgetBlock : this.cls.widget) || (block ? 'phx-editor-widget phx-editor-widget-block' : 'phx-editor-widget'),
+        contenteditable: 'false',
+      });
+      node.dataset.widget = type;
+      this._setWidgetData(node, data);
+      node.textContent = label || def?.label || (data.id !== undefined ? `${type} #${data.id}` : type);
+
+      if (block) {
+        this._insertBlock(node);
+      } else {
+        this._insertAtCaret(node);
+      }
+      this._loadWidgetPreviews([node]);
+      return node;
+    }
+
+    /** New settings (and label) of a placeholder in the text. */
+    updateWidget(node, data, label) {
+      this._setWidgetData(node, data);
+      if (label) {
+        if (node.hasAttribute('data-phx-label')) node.setAttribute('data-phx-label', label);
+        else node.textContent = label;
+      }
+      this._sync();
+      this._loadWidgetPreviews([node]);
+    }
+
+    /** a placeholder's settings: its data-* attributes (without data-widget), camelCased, as strings */
+    _widgetData(node) {
+      const data = {};
+      for (const attr of node.attributes) {
+        if (attr.name.startsWith('data-') && attr.name !== 'data-widget' && !attr.name.startsWith('data-phx-')) {
+          data[attr.name.slice(5).replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())] = attr.value;
+        }
+      }
+      return data;
+    }
+
+    _setWidgetData(node, data) {
+      [...node.attributes]
+        .filter(a => a.name.startsWith('data-') && a.name !== 'data-widget' && !a.name.startsWith('data-phx-'))
+        .forEach(a => node.removeAttribute(a.name));
+      Object.entries(data || {}).forEach(([key, value]) => {
+        if (value === null || value === undefined) return;
+        const name = 'data-' + key.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
+        node.setAttribute(name, typeof value === 'string' ? value : JSON.stringify(value));
+      });
+    }
+
+    /**
+     * Asks the application for a widget's settings: a "phx-editor:widget" event
+     * on the wrapper — {editor, type, widget, data, element, save(data, label), remove(), done()};
+     * data and element are null for a new one (inserted at the caret on save);
+     * done(): the settings closed without saving (the placeholder's mark goes).
+     */
+    _editWidget(type, node) {
+      const range = node ? null : (this.savedRange || this._saveRange());
+      const detail = {
+        editor:  this,
+        type,
+        widget:  this.widgetMap.get(type) || { type, label: type, group: '', icon: '', block: false },
+        data:    node ? this._widgetData(node) : null,
+        element: node,
+        save: (data, label) => {
+          if (node) {
+            this.widgetEditEnded(node);
+            this.updateWidget(node, data, label);
+            return node;
+          }
+          this.savedRange = range;
+          return this.insertWidget(type, data, label);
+        },
+        done: () => this.widgetEditEnded(node),
+        remove: () => {
+          if (!node) return;
+          node.remove();
+          this._sync();
+          this._updateState();
+        },
+      };
+      if (node) node.dataset.phxEditing = '';
+      this.w.dispatchEvent(new CustomEvent('phx-editor:widget', { bubbles: true, detail }));
+    }
+
+    /** a block widget: between the blocks around the caret — in place of an empty paragraph */
+    _insertBlock(node) {
       this.pane.focus();
       this._restoreRange(this.savedRange);
-
-      const node = el('div', {
-        cls: this.cls.widget || 'phx-editor-widget',
-        contenteditable: 'false',
-        data: { widget: type, id: id },
-        text: label || `${type} #${id}`,
-      });
-
       const sel   = this._sel();
       const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
-
-      if (range && this.pane.contains(range.commonAncestorContainer)) {
-        range.deleteContents();
-        range.insertNode(node);
-      } else {
-        this.pane.appendChild(node);
+      let block = range && this.pane.contains(range.startContainer) ? range.startContainer : null;
+      // up to a child of the pane or of a grid column
+      while (block && block.parentNode !== this.pane && !block.parentNode?.matches?.('.row > [class*="col"]')) {
+        block = block.parentNode;
       }
-
-      // A contenteditable="false" node can't hold the caret — land it in an
-      // editable text spot right after the widget so typing can continue.
-      let after = node.nextSibling;
-      if (!after || after.nodeType !== 3) {
-        after = document.createTextNode(' ');
-        node.after(after);
+      if (!block || block === this.pane) {
+        this.pane.appendChild(node);
+      } else if (block.nodeType === 1 && block.tagName === 'P' && !block.textContent.trim() && !block.querySelector('img, [data-widget]')) {
+        block.replaceWith(node);
+      } else {
+        block.after(node);
+      }
+      // a paragraph after it to go on writing
+      let next = node.nextElementSibling;
+      if (!next || next.tagName !== 'P') {
+        next = el('p');
+        next.appendChild(el('br'));
+        node.after(next);
       }
       const newRange = document.createRange();
-      newRange.setStart(after, 0);
+      newRange.setStart(next, 0);
       newRange.collapse(true);
       sel.removeAllRanges();
       sel.addRange(newRange);
-
       this._sync();
       this._updateState();
+    }
+
+    /** previews of the placeholders (default: all in the text) from the application, see setWidgets() */
+    async _loadWidgetPreviews(nodes) {
+      if (!this.widgetPreviewUrl) return;
+      nodes = nodes || [...this.pane.querySelectorAll('[data-widget]')];
+      if (!nodes.length) return;
+      const seq = ++this.previewSeq;
+      nodes.forEach(n => { n.dataset.phxSeq = String(seq); });
+      let previews;
+      try {
+        const response = await fetch(this.widgetPreviewUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ widgets: nodes.map(n => ({ type: n.dataset.widget, data: this._widgetData(n) })) }),
+        });
+        previews = (await response.json()).previews || [];
+      } catch (_) {
+        return;
+      }
+      nodes.forEach((node, i) => {
+        // gone, or asked again since
+        if (!node.isConnected || node.dataset.phxSeq !== String(seq)) return;
+        node.removeAttribute('data-phx-seq');
+        if (typeof previews[i] !== 'string') return;
+        if (!node.hasAttribute('data-phx-label')) node.setAttribute('data-phx-label', node.textContent.trim());
+        node.innerHTML = '';
+        node.appendChild(el('div', { cls: 'phx-editor-widget-preview', html: previews[i] }));
+      });
+    }
+
+    /** the application is done with the widget's settings (saved or not) */
+    widgetEditEnded(node) {
+      node?.removeAttribute('data-phx-editing');
     }
   }
 
@@ -2628,21 +2817,21 @@
      * Insert a custom widget placeholder into an editor from outside code
      * (e.g. a CMS "browse widgets" panel with an Insert button).
      *
-     * @param {string}        type       Widget identifier, e.g. "poll".
-     * @param {string|number} id         Widget id, e.g. 5.
-     * @param {string}        [label]    Text shown inside the placeholder.
-     * @param {string}        [fieldName]  Target a specific editor by its form field
-     *                                     name (data-name). Defaults to the last
-     *                                     focused editor on the page.
+     * @param {string}               type       Widget identifier, e.g. "poll".
+     * @param {object|string|number} data       Settings ({id: 5} → data-id="5"), or just the id.
+     * @param {string}               [label]    Text shown inside the placeholder.
+     * @param {string}               [fieldName]  Target a specific editor by its form field
+     *                                            name (data-name). Defaults to the last
+     *                                            focused editor on the page.
      * @returns {boolean} Whether a target editor instance was found.
      */
-    insertWidget(type, id, label, fieldName) {
+    insertWidget(type, data, label, fieldName) {
       const instance = fieldName ? instances.get(fieldName) : activeInstance;
       if (!instance) {
         console.warn('PhloxEditor.insertWidget(): no target editor instance found.');
         return false;
       }
-      instance.insertWidget(type, id, label);
+      instance.insertWidget(type, data, label);
       return true;
     },
   };
