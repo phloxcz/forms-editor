@@ -477,6 +477,7 @@ class EditorInput extends BaseControl
             'btn'          => 'phx-editor-btn',
             'btnActive'    => 'phx-editor-btn active',
             'btnDanger'    => 'phx-editor-btn danger',
+            'btnGroup'     => 'phx-editor-btn-group',
             'select'       => 'phx-editor-style-select',
             'sep'          => 'phx-editor-sep',
             'colorBtn'     => 'phx-editor-btn phx-editor-color-btn',
@@ -509,13 +510,19 @@ class EditorInput extends BaseControl
         $map = match ($this->theme) {
             self::THEME_BOOTSTRAP => [
                 'wrapper'      => 'phx-editor-bs-mode card overflow-hidden',
-                'toolbar'      => 'phx-editor-toolbar d-flex flex-wrap align-items-center gap-1 p-2 bg-body-tertiary border-bottom',
-                'btn'          => 'btn btn-outline-secondary border-0',
-                'btnActive'    => 'btn btn-outline-secondary border-0 active',
-                'btnDanger'    => 'btn btn-outline-danger border-0',
-                'select'       => 'form-select w-auto',
-                'sep'          => 'vr mx-1 opacity-25',
-                'colorBtn'     => 'btn btn-outline-secondary border-0 phx-editor-color-btn',
+                // the toolbar itself keeps its own look (light panel, grouped pill
+                // buttons, blue active state) even in Bootstrap mode — plain
+                // btn-outline-secondary read as barely-there and double-padded
+                // against the wrapper's own row/wrap layout; only the card around
+                // it, the editor pane and the popups are Bootstrap-flavoured.
+                'toolbar'      => 'phx-editor-toolbar',
+                'btn'          => 'phx-editor-btn',
+                'btnActive'    => 'phx-editor-btn active',
+                'btnDanger'    => 'phx-editor-btn danger',
+                'btnGroup'     => 'phx-editor-btn-group',
+                'select'       => 'phx-editor-style-select',
+                'sep'          => 'phx-editor-sep',
+                'colorBtn'     => 'phx-editor-btn phx-editor-color-btn',
                 'editor'       => 'phx-editor-editor border-0',
                 'source'       => 'phx-editor-source form-control rounded-0 border-0 border-top font-monospace',
                 'floatBar'     => 'phx-editor-float-bar card shadow-sm border p-1',
@@ -564,6 +571,7 @@ class EditorInput extends BaseControl
                     'dark:text-red-500 dark:hover:bg-red-700',
                     'transition-colors border-0 bg-transparent cursor-pointer',
                 ]),
+                'btnGroup'     => 'inline-flex flex-wrap items-center gap-0.5',
                 'select'       => implode(' ', [
                     'rounded border border-gray-600 bg-gray-800 text-gray-200 text-xs',
                     'py-0.5 px-1.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500',

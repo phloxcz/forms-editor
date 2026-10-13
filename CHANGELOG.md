@@ -9,6 +9,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - **Custom widget insertion:** `window.PhloxEditor.insertWidget(type, id, label, fieldName?)` inserts an atomic, non-editable `<div data-widget data-id>` placeholder at the caret, for embedding CMS widgets (polls, embeds, dynamic blocks) that get resolved server-side after sanitization
 - `widget` theme key for styling the placeholder in `default` / `bootstrap` / `tailwind` presets
+- **`btnGroup` theme key:** each toolbar button-group (the buttons between two separators) is now wrapped in its own `<span data-phx-toolbar-group>`, styled via the new `btnGroup` class map key. Purely structural by default (no visual change out of the box) — lets a host page style button clusters (e.g. as pills/segmented controls) independently of individual buttons or separators, without touching `wysiwyg.js`
 
 ### Fixed
 - **Pasted image lost on save when upload fails:** when an image is pasted and `uploadUrl` is configured but the upload request fails, the fallback inserted a `blob:` object URL instead of a persistable `data:` URL. `blob:` URLs only live in the browser tab's memory, so the image silently disappeared after saving/reloading. The fallback now reads the file via `FileReader.readAsDataURL()` and inlines it as base64, matching the existing no-`uploadUrl` behavior.

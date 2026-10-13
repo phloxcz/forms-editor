@@ -355,16 +355,27 @@
     _buildToolbar() {
       const tb = el('div', { cls: this.cls.toolbar + ' phx-editor-toolbar-wrap' });
 
+      // Each button-group (the buttons between two separators) is wrapped in
+      // its own <span>, styled via this.cls.btnGroup — so a host page can
+      // target groups independently of individual buttons or separators
+      // (e.g. to turn them into pill-shaped button clusters) without
+      // touching this file.
+      const makeGroup = () => el('span', { cls: this.cls.btnGroup, 'data-phx-toolbar-group': '' });
+
       // Determine row boundaries from toolbarRows
       // Each row in toolbarRows gets its own flex div
       const rows = this.toolbarRows || [null]; // null = single row with all groups
       let rowIdx = 0;
-      let currentRow = el('div', { cls: 'phx-editor-toolbar-row' });
+      let currentRow   = el('div', { cls: 'phx-editor-toolbar-row' });
+      let currentGroup = makeGroup();
+      currentRow.appendChild(currentGroup);
       tb.appendChild(currentRow);
       let sep = false;
 
       const newRow = () => {
-        currentRow = el('div', { cls: 'phx-editor-toolbar-row' });
+        currentRow   = el('div', { cls: 'phx-editor-toolbar-row' });
+        currentGroup = makeGroup();
+        currentRow.appendChild(currentGroup);
         tb.appendChild(currentRow);
         sep = true;  // prevent sep as first element of a new row
       };
@@ -378,9 +389,14 @@
         }
       };
       const addSep = () => {
-        if (!sep) { this._sep(currentRow); sep = true; }
+        if (!sep) {
+          this._sep(currentRow);
+          currentGroup = makeGroup();
+          currentRow.appendChild(currentGroup);
+          sep = true;
+        }
       };
-      const addBtn = (btn) => { currentRow.appendChild(btn); sep = false; };
+      const addBtn = (btn) => { currentGroup.appendChild(btn); sep = false; };
 
       // ── Styles ────────────────────────────────────────────────────────────
       maybeNewRow('styles'); if (this._hasGroup('styles')) {
@@ -666,10 +682,14 @@
         this.fullscreenBtn = null;
       }
 
-      // Odstranit trailing separátory z každého řádku
+      // Odstranit trailing separátory a prázdné skupiny z každého řádku
       tb.querySelectorAll('.phx-editor-toolbar-row').forEach(row => {
-        while (row.lastChild && (row.lastChild.classList?.contains('phx-editor-sep') || row.lastChild.classList?.contains('vr'))) {
-          row.lastChild.remove();
+        while (row.lastChild) {
+          const last = row.lastChild;
+          const isSep = last.classList?.contains('phx-editor-sep') || last.classList?.contains('vr');
+          const isEmptyGroup = last.hasAttribute?.('data-phx-toolbar-group') && last.childElementCount === 0;
+          if (!isSep && !isEmptyGroup) break;
+          last.remove();
         }
       });
 

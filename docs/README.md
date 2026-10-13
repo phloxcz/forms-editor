@@ -171,7 +171,9 @@ $form->addEditor('content', 'Obsah')
 
 Klíče, které nepřepíšete, zůstanou na hodnotě z `THEME_DEFAULT`. Nejdůležitější klíče mapy:
 
-`wrapper`, `toolbar`, `btn`, `btnActive`, `btnDanger`, `select`, `sep`, `colorBtn`, `editor`, `source`, `floatBar`, `floatBarImg`, `floatBtn`, `floatInput`, `floatText`, `floatLabel`, `floatLock`, `popupOverlay`, `popup`, `popupTitle`, `popupBody`, `popupField`, `popupLabel`, `popupInput`, `popupSelect`, `popupHint`, `popupActions`, `popupCancel`, `popupConfirm`, `widget` (placeholder vlastního widgetu, viz [Vkládání vlastních widgetů](#vkládání-vlastních-widgetů)), `bsModal` (bool — vykreslí popup jako strukturu Bootstrap modalu).
+`wrapper`, `toolbar`, `btn`, `btnActive`, `btnDanger`, `btnGroup`, `select`, `sep`, `colorBtn`, `editor`, `source`, `floatBar`, `floatBarImg`, `floatBtn`, `floatInput`, `floatText`, `floatLabel`, `floatLock`, `popupOverlay`, `popup`, `popupTitle`, `popupBody`, `popupField`, `popupLabel`, `popupInput`, `popupSelect`, `popupHint`, `popupActions`, `popupCancel`, `popupConfirm`, `widget` (placeholder vlastního widgetu, viz [Vkládání vlastních widgetů](#vkládání-vlastních-widgetů)), `bsModal` (bool — vykreslí popup jako strukturu Bootstrap modalu).
+
+`btnGroup` stojí za zmínku samostatně: tlačítka mezi dvěma separátory jsou obalená v `<span class="{btnGroup}" data-phx-toolbar-group>`. Výchozí hodnota je čistě strukturální (žádný vizuální rozdíl oproti ploché liště), ale přepsáním této třídy si lze nastylovat shluky tlačítek jako samostatné "pilulky"/segmented-control bloky, nezávisle na jednotlivých tlačítkách nebo separátorech.
 
 Kompletní výchozí mapu najdete v [`src/EditorInput.php`](../src/EditorInput.php) v metodě `resolveThemeClasses()`.
 
