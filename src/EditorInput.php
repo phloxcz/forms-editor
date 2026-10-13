@@ -433,7 +433,10 @@ class EditorInput extends BaseControl
             ->data('theme',         json_encode($this->resolveThemeClasses()))
             ->data('min-height',    $this->minHeight)
             ->data('max-height',    $this->maxHeight)
-            ->data('color-scheme',  $this->colorScheme)
+            // THEME_BOOTSTRAP/THEME_TAILWIND don't follow the OS scheme (see setColorScheme()) —
+            // 'light' here keeps wysiwyg.js from ever touching data-theme (JSON class map) on them,
+            // so the dark-mode CSS block (keyed off data-theme="auto"/"dark") never fires there
+            ->data('color-scheme',  $this->theme === self::THEME_DEFAULT ? $this->colorScheme : 'light')
             ->data('variables',     $this->variables !== null ? json_encode($this->variables, JSON_UNESCAPED_UNICODE) : null)
             ->data('variable-format', $this->variables !== null ? $this->variableFormat : null)
             ->data('widgets',       $this->widgets !== null ? json_encode($this->widgets, JSON_UNESCAPED_UNICODE) : null)

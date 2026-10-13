@@ -720,7 +720,17 @@
       this.pane.addEventListener('click',   e  => this._handleEditorClick(e));
       this.pane.addEventListener('keydown', e  => this._handleKeydown(e));
       this.pane.addEventListener('focus',   () => { activeInstance = this; this._updateState(); });
-      this.pane.addEventListener('blur',    () => { this.savedRange = this._saveRange(); });
+      // only overwrite with a range that's actually still in the pane — a long
+      // detour (the widget settings panel: picking photos, typing…) can blur/
+      // focus the pane again with the selection cleared or moved elsewhere
+      // (e.g. a Bootstrap offcanvas making the rest of the page inert), and that
+      // must not clobber the caret position saved when the detour started
+      // (_showWidgetPicker(), _editWidget()) — insertWidget() would otherwise
+      // find no valid node to insert at and fall back to the end of the text
+      this.pane.addEventListener('blur',    () => {
+        const r = this._saveRange();
+        if (r && this.pane.contains(r.startContainer)) this.savedRange = r;
+      });
       this.pane.addEventListener('paste',   e  => this._handlePaste(e));
 
       // Widget click: the application edits it (see _editWidget())

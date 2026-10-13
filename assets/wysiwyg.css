@@ -1335,6 +1335,25 @@ body.phx-editor-fullscreen-open {
   border-radius: var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem) 0 0 !important;
 }
 
+/* Toolbar in a dark Bootstrap page (data-bs-theme="dark" on an ancestor, e.g.
+   <html>) — this is the one place the toolbar follows an *explicit* dark
+   mode rather than staying on its own fixed light look; it does not react to
+   the OS scheme (data-color-scheme is forced to "light" for this theme, see
+   EditorInput::getControl()). Only the variables the toolbar/select/sep
+   actually read in BS mode — the editor pane, source view and float bars
+   already follow Bootstrap's own --bs-* vars (forced !important above). */
+[data-bs-theme="dark"] .phx-editor-bs-mode {
+  --phx-editor-tb-bg:          #1a1e2e;
+  --phx-editor-tb-btn:         #2d3349;
+  --phx-editor-tb-hover:       #3d4559;
+  --phx-editor-tb-active:      #4f6ef7;
+  --phx-editor-tb-text:        #c8cdd8;
+  --phx-editor-tb-sep:         rgba(255,255,255,0.1);
+  --phx-editor-tb-border:      rgba(255,255,255,0.08);
+  --phx-editor-tb-hover-text:  #ffffff;
+  --phx-editor-tb-active-text: #ffffff;
+}
+
 /* Editor area */
 .phx-editor-bs-mode .phx-editor-editor {
   background: var(--bs-body-bg, #fff) !important;
