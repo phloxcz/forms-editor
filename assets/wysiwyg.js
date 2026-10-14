@@ -2569,7 +2569,11 @@
         });
       }
 
-      document.body.appendChild(overlay);
+      // Inside a Bootstrap modal (e.g. a media-library dialog), the modal's own
+      // focus trap keeps stealing focus back from anything appended to body —
+      // it only considers its own DOM contained "inside"; appending the popup
+      // there too (rather than fighting it) keeps its inputs typeable.
+      (this.w.closest('.modal') || document.body).appendChild(overlay);
       this.overlay = overlay;
 
       // Focus first input
