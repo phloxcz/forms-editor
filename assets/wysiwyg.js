@@ -1184,7 +1184,10 @@
             widgets.forEach(w => {
               const btn = el('button', { type: 'button', cls: 'phx-editor-var-item phx-editor-widget-item' });
               if (w.icon) btn.appendChild(el('span', { cls: 'phx-editor-widget-item-icon', text: w.icon }));
-              btn.appendChild(el('span', { cls: 'phx-editor-var-item-label', text: w.label }));
+              const text = el('span', { cls: 'phx-editor-widget-item-text' });
+              text.appendChild(el('span', { cls: 'phx-editor-var-item-label', text: w.label }));
+              if (w.description) text.appendChild(el('span', { cls: 'phx-editor-widget-item-description', text: w.description }));
+              btn.appendChild(text);
               btn.addEventListener('mousedown', e => e.preventDefault());
               btn.addEventListener('click', () => {
                 this._closePopup();

@@ -235,7 +235,21 @@
 /* icon and label side by side (the variable picker's items spread theirs apart) */
 .phx-editor-var-item.phx-editor-widget-item {
   justify-content: flex-start;
+  align-items: flex-start;
   gap: 8px;
+}
+.phx-editor-widget-item-icon { margin-top: 1px; }
+.phx-editor-widget-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.phx-editor-widget-item-description {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--phx-editor-float-label, rgba(60,70,100,0.55));
+  white-space: normal;
 }
 
 /* Tables */

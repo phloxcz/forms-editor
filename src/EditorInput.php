@@ -259,7 +259,14 @@ class EditorInput extends BaseControl
      * stays). The preview is only shown: the stored HTML and the source view
      * have the placeholder with its label as text.
      *
-     * @param list<array{type: string, label?: string, group?: string, icon?: string, block?: bool}> $widgets
+     * description shows under the label in the picker, same as label/icon/group.
+     * settings is this editor's one deliberate escape hatch for the host app's
+     * own per-widget-type data it has no business knowing the shape of (e.g. how
+     * wide that widget's settings panel should be) — carried through untouched
+     * to its own code via the "phx-editor:widget" event's detail.widget.settings,
+     * never read by this editor itself.
+     *
+     * @param list<array{type: string, label?: string, group?: string, icon?: string, block?: bool, description?: string, settings?: array<string, mixed>}> $widgets
      */
     public function setWidgets(array $widgets, string $previewUrl = ''): static
     {
@@ -267,11 +274,13 @@ class EditorInput extends BaseControl
         foreach ($widgets as $w) {
             if (preg_match('~^[a-z][a-z0-9-]*$~i', $w['type'])) {
                 $this->widgets[] = [
-                    'type'  => $w['type'],
-                    'label' => $w['label'] ?? $w['type'],
-                    'group' => $w['group'] ?? '',
-                    'icon'  => $w['icon'] ?? '',
-                    'block' => (bool) ($w['block'] ?? false),
+                    'type'        => $w['type'],
+                    'label'       => $w['label'] ?? $w['type'],
+                    'group'       => $w['group'] ?? '',
+                    'icon'        => $w['icon'] ?? '',
+                    'block'       => (bool) ($w['block'] ?? false),
+                    'description' => $w['description'] ?? '',
+                    'settings'    => (object) ($w['settings'] ?? []),
                 ];
             }
         }
