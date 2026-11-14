@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] – 2026-11-14
+
+### Fixed
+- **Order of toolbar groups:** the groups follow the order of the `toolbar` option (`'lists,format'` shows lists first), also in more rows (`'format,lists|align'`); before, they were in a fixed built-in order and a row break came with the first group of the next row
+
 ## [0.2.0] – 2026-11-14
 
 ### Added
@@ -103,6 +108,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Full demo page (`demo/index.html`)
 - PHP **8.4+**
 
+[0.2.1]: https://github.com/phloxcz/forms-editor/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/phloxcz/forms-editor/compare/v0.1.10...v0.2.0
 [0.1.10]: https://github.com/phloxcz/forms-editor/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/phloxcz/forms-editor/compare/v0.1.8...v0.1.9

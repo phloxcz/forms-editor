@@ -528,31 +528,25 @@
       // touching this file.
       const makeGroup = () => el('span', { cls: this.cls.btnGroup, 'data-phx-toolbar-group': '' });
 
-      // Determine row boundaries from toolbarRows
-      // Each row in toolbarRows gets its own flex div
-      const rows = this.toolbarRows || [null]; // null = single row with all groups
-      let rowIdx = 0;
-      let currentRow   = el('div', { cls: 'phx-editor-toolbar-row' });
+      // One flex div per row of toolbarRows (null = one row with all groups in the built-in order)
+      const rowEls = (this.toolbarRows || [null]).map(() => el('div', { cls: 'phx-editor-toolbar-row' }));
+      rowEls.forEach(row => tb.appendChild(row));
+      let currentRow   = rowEls[0];
       let currentGroup = makeGroup();
       currentRow.appendChild(currentGroup);
-      tb.appendChild(currentRow);
       let sep = false;
 
-      const newRow = () => {
-        currentRow   = el('div', { cls: 'phx-editor-toolbar-row' });
-        currentGroup = makeGroup();
-        currentRow.appendChild(currentGroup);
-        tb.appendChild(currentRow);
-        sep = true;  // prevent sep as first element of a new row
-      };
-      // Called before each group section — advances to next row if needed
+      // Called before each group section: with toolbarRows the group goes to its row, in a group span of its own;
+      // the row is sorted by the given order at the end (the sections below are in the built-in order)
       const maybeNewRow = (groupName) => {
         if (!this.toolbarRows) return;
-        const targetRow = this.toolbarRows.findIndex(row => row.includes(groupName));
-        if (targetRow > rowIdx) {
-          for (let i = rowIdx; i < targetRow; i++) newRow();
-          rowIdx = targetRow;
-        }
+        const target = this.toolbarRows.findIndex(row => row.includes(groupName));
+        if (target < 0) return;
+        currentRow = rowEls[target];
+        currentGroup = makeGroup();
+        currentGroup.dataset.phxGroup = groupName;
+        currentRow.appendChild(currentGroup);
+        sep = true;   // the separator in front of the group is added when the row is sorted
       };
       const addSep = () => {
         if (!sep) {
@@ -846,6 +840,25 @@
         addBtn(this.fullscreenBtn);
       } else {
         this.fullscreenBtn = null;
+      }
+
+      // Rows in the order the groups were given: 'lists,format' shows lists first
+      if (this.toolbarRows) {
+        rowEls.forEach((row, index) => {
+          const order = this.toolbarRows[index];
+          const chunks = [];
+          [...row.childNodes].forEach(node => {
+            if (node.dataset?.phxGroup || !chunks.length) chunks.push({ name: node.dataset?.phxGroup, nodes: [] });
+            chunks[chunks.length - 1].nodes.push(node);
+          });
+          chunks.sort((a, b) => (a.name ? order.indexOf(a.name) : -1) - (b.name ? order.indexOf(b.name) : -1));
+          row.replaceChildren();
+          chunks.forEach((chunk, position) => {
+            if (position > 0) this._sep(row);
+            chunk.nodes.forEach(node => row.appendChild(node));
+            chunk.nodes.forEach(node => node.dataset && delete node.dataset.phxGroup);
+          });
+        });
       }
 
       // Odstranit prázdné skupiny a separátory na začátku a konci řádku i dva separátory za sebou
