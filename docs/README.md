@@ -323,7 +323,7 @@ editor.insertText('👍');        // text na místo kurzoru
 editor.destroy();
 ```
 
-Volby mají přednost před `data-*` atributy, které vykresluje `EditorInput`. Bez nich se editor chová jako dosud. Balíček do projektu přidáte z GitHubu (`npm i github:phloxcz/forms-editor`) nebo ze sousední složky (`npm i ../phlox-editor`). PhloxJS má adaptér `phlox-js/adapters/phlox-editor`.
+Volby mají přednost před `data-*` atributy, které vykresluje `EditorInput`. Bez nich se editor chová jako dosud. Balíček do projektu přidáte z GitHubu (`npm i github:phloxcz/forms-editor`) nebo ze sousední složky (`npm i ../phlox-editor`). PhloxJS ho má ve formulářích jako `addEditor()` a načítá ho líně.
 
 ### Ukládané HTML
 
