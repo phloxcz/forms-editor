@@ -295,6 +295,42 @@ window.PhloxEditor.destroy(someContainerElement);
 const instance = new window.PhloxEditor.PhloxEditor(wrapperElement);
 ```
 
+### Použití z JS a bundleru (bez PHP)
+
+Pro aplikace, které si stránku kreslí samy (PhloxJS, React…), je editor i ES modul s typy pro TypeScript:
+
+```js
+import { PhloxEditor, autoInit } from '@phloxcz/forms-editor';
+import '@phloxcz/forms-editor/wysiwyg.css';
+
+autoInit(false);   // editory zakládá a ruší aplikace, stránka se nesleduje (MutationObserver)
+
+const editor = new PhloxEditor(element, {
+    name: 'text',                          // jméno skrytého pole formuláře
+    value: '<p>Ahoj</p>',
+    toolbar: 'format,lists|link,image',    // nebo [['format', 'lists'], ['link', 'image']]
+    theme: 'bootstrap',                    // 'default', 'bootstrap' nebo částečná mapa tříd
+    minHeight: 120,
+    placeholder: 'Napište…',
+    upload: async file => (await nahraj(file)).url,   // místo uploadUrl
+    inlineImages: false,                   // obrázek, který nejde nahrát, se nevloží jako base64
+});
+
+element.addEventListener('phx-editor:change', e => console.log(e.detail.value));
+editor.getValue();              // uložené HTML
+editor.setValue('<p>Nové</p>'); // nový obsah, bez události změny
+editor.insertText('👍');        // text na místo kurzoru
+editor.destroy();
+```
+
+Volby mají přednost před `data-*` atributy, které vykresluje `EditorInput`. Bez nich se editor chová jako dosud. Balíček do projektu přidáte z GitHubu (`npm i github:phloxcz/forms-editor`) nebo ze sousední složky (`npm i ../phlox-editor`). PhloxJS má adaptér `phlox-js/adapters/phlox-editor`.
+
+### Ukládané HTML
+
+Hodnota editoru vyjde v každém prohlížeči stejně: `<b>` se uloží jako `<strong>`, `<i>` jako `<em>`, `<strike>` jako `<s>`, `<font color>` jako `<span style="color">`. Prázdné `span` zmizí, sousední stejné značky se sloučí a prázdný editor dá `''`. Normalizuje se jen ukládaná hodnota, plocha editoru zůstává, jak ji nechal prohlížeč, aby se nerozbil kurzor. Funkce je k dispozici i samostatně: `PhloxEditor.normalizeHtml(element)`.
+
+HTML vložené ze schránky (Word, Google Docs, weby) se před vložením vyčistí: zahodí se skripty, styly, komentáře, třídy `Mso…`, písma, okraje, atributy `on…` a odkazy `javascript:`. Struktura, třídy, odkazy, obrázky, barvy a zarovnání zůstanou. Funkce je k dispozici i samostatně: `PhloxEditor.cleanPastedHtml(html)`. Nenahrazuje čištění na serveru, viz [Bezpečnost](#bezpečnost).
+
 ---
 
 ## Vkládání vlastních widgetů

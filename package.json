@@ -1,0 +1,15 @@
+{
+  "name": "@phloxcz/forms-editor",
+  "version": "0.2.0",
+  "description": "WYSIWYG editor in plain JS: the client part of phloxcz/forms-editor, usable from bundlers as an ES module.",
+  "license": "MIT",
+  "homepage": "https://github.com/phloxcz/forms-editor",
+  "repository": { "type": "git", "url": "git+https://github.com/phloxcz/forms-editor.git" },
+  "exports": {
+    ".": { "types": "./assets/index.d.ts", "default": "./assets/index.mjs" },
+    "./wysiwyg.js": "./assets/wysiwyg.js",
+    "./wysiwyg.css": "./assets/wysiwyg.css"
+  },
+  "files": ["assets"],
+  "sideEffects": true
+}

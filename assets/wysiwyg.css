@@ -145,6 +145,15 @@
   word-break: break-word;
   box-sizing: border-box;
 }
+
+/* placeholder (option placeholder): an empty pane, or one with just an empty paragraph */
+.phx-editor-editor[data-placeholder]:empty::before,
+.phx-editor-editor[data-placeholder]:has(> p:only-child > br:only-child)::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  color: var(--phx-editor-float-label);
+  pointer-events: none;
+}
 .phx-editor-editor:focus { box-shadow: inset 0 0 0 2px rgba(79,110,247,0.12); }
 
 /* Typography */

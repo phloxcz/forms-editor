@@ -206,6 +206,153 @@
 
 
   // =========================================================================
+  // Themes — the same class maps EditorInput::resolveThemeClasses() sends in
+  // data-theme, for editors created from JS without the PHP side
+  // =========================================================================
+
+  const THEMES = {
+    default: {
+      wrapper: '', toolbar: 'phx-editor-toolbar', btn: 'phx-editor-btn', btnActive: 'phx-editor-btn active',
+      btnDanger: 'phx-editor-btn danger', btnGroup: 'phx-editor-btn-group', select: 'phx-editor-style-select',
+      sep: 'phx-editor-sep', colorBtn: 'phx-editor-btn phx-editor-color-btn', editor: 'phx-editor-editor',
+      source: 'phx-editor-source', floatBar: 'phx-editor-float-bar', floatBarImg: 'phx-editor-float-bar phx-editor-img-float',
+      floatBtn: 'phx-editor-btn phx-editor-float-btn', floatInput: 'phx-editor-img-dim-input',
+      floatText: 'phx-editor-img-text-input', floatLabel: 'phx-editor-float-bar-label',
+      floatLock: 'phx-editor-btn phx-editor-img-lock active', popupOverlay: 'phx-editor-popup-overlay',
+      popup: 'phx-editor-popup', popupTitle: 'phx-editor-popup-title', popupBody: '', popupField: 'phx-editor-popup-field',
+      popupLabel: '', popupInput: '', popupSelect: '', popupHint: 'phx-editor-popup-hint',
+      popupActions: 'phx-editor-popup-actions', popupCancel: 'phx-editor-popup-btn phx-editor-popup-btn-secondary',
+      popupConfirm: 'phx-editor-popup-btn phx-editor-popup-btn-primary', widget: 'phx-editor-widget',
+      widgetBlock: 'phx-editor-widget phx-editor-widget-block', bsModal: false,
+    },
+    bootstrap: {
+      wrapper: 'phx-editor-bs-mode card overflow-hidden', editor: 'phx-editor-editor border-0',
+      source: 'phx-editor-source form-control rounded-0 border-0 border-top font-monospace',
+      floatBar: 'phx-editor-float-bar card shadow-sm border p-1',
+      floatBarImg: 'phx-editor-float-bar phx-editor-img-float card shadow-sm border p-1',
+      floatBtn: 'btn btn-sm btn-outline-secondary', floatInput: 'form-control form-control-sm',
+      floatText: 'form-control form-control-sm', floatLabel: 'input-group-text small px-2 py-0',
+      floatLock: 'btn btn-sm btn-outline-secondary active', popupOverlay: '', popup: '', popupTitle: '',
+      popupBody: 'modal-body', popupField: 'mb-3', popupLabel: 'form-label fw-semibold small',
+      popupInput: 'form-control form-control-sm', popupSelect: 'form-select form-select-sm',
+      popupHint: 'form-text text-muted small mb-1 d-block', popupActions: 'modal-footer py-2',
+      popupCancel: 'btn btn-secondary', popupConfirm: 'btn btn-primary',
+      widget: 'phx-editor-widget d-inline-flex align-items-center gap-2 px-2 py-1 rounded border bg-body-tertiary text-body-secondary small',
+      bsModal: true,
+    },
+  };
+
+  /** 'default' | 'bootstrap' | a partial class map → the full class map */
+  function resolveTheme(theme) {
+    const preset = typeof theme === 'string' ? THEMES[theme] : theme;
+    return { ...THEMES.default, ...(preset || {}) };
+  }
+
+  // =========================================================================
+  // HTML — the stored value the same in every browser, pasted HTML cleaned
+  // =========================================================================
+
+  function renameEl(node, tag) {
+    const next = node.ownerDocument.createElement(tag);
+    for (const attr of node.attributes) next.setAttribute(attr.name, attr.value);
+    while (node.firstChild) next.appendChild(node.firstChild);
+    node.replaceWith(next);
+    return next;
+  }
+
+  function unwrapEl(node) {
+    node.replaceWith(...node.childNodes);
+  }
+
+  const sameAttributes = (a, b) => a.attributes.length === b.attributes.length
+    && [...a.attributes].every(attr => b.getAttribute(attr.name) === attr.value);
+
+  const MERGED = new Set(['STRONG', 'EM', 'U', 'S', 'SUB', 'SUP', 'CODE', 'SPAN']);
+  const CONTENT = 'img, hr, table, iframe, video, [data-widget]';
+
+  /**
+   * What execCommand writes differs between browsers (<b> or <strong>, <font color>…); the stored value
+   * is the same everywhere: <strong>, <em>, <s>, colours as styles, no empty spans, neighbours merged,
+   * an editor with nothing in it is ''. Changes root in place, used on a copy of the pane.
+   */
+  function normalizeHtml(root) {
+    root.querySelectorAll('b').forEach(n => renameEl(n, 'strong'));
+    root.querySelectorAll('i').forEach(n => renameEl(n, 'em'));
+    root.querySelectorAll('strike').forEach(n => renameEl(n, 's'));
+    root.querySelectorAll('font').forEach(font => {
+      const span = font.ownerDocument.createElement('span');
+      span.setAttribute('style', font.getAttribute('style') || '');
+      if (font.hasAttribute('color')) span.style.color = font.getAttribute('color');
+      while (font.firstChild) span.appendChild(font.firstChild);
+      font.replaceWith(span);
+    });
+    root.querySelectorAll('[style=""]').forEach(n => n.removeAttribute('style'));
+    root.querySelectorAll('span:not([class]):not([style])').forEach(n => {
+      if (!n.attributes.length) unwrapEl(n);
+    });
+    // <strong>a</strong><strong>b</strong> → <strong>ab</strong>
+    root.querySelectorAll('*').forEach(n => {
+      if (!MERGED.has(n.tagName) || !root.contains(n)) return;
+      let next = n.nextSibling;
+      while (next && next.nodeType === 1 && next.tagName === n.tagName && sameAttributes(n, next)) {
+        while (next.firstChild) n.appendChild(next.firstChild);
+        next.remove();
+        next = n.nextSibling;
+      }
+    });
+    if (!root.textContent.trim() && !root.querySelector(CONTENT)) root.innerHTML = '';
+    return root;
+  }
+
+  const PASTE_DROP = 'script, style, meta, link, title, template, iframe, object, embed, form, input, button, select, textarea, o\\:p, xml';
+  const PASTE_STYLES = ['text-align', 'color', 'background-color', 'width', 'height'];
+
+  /**
+   * Pasted HTML without what Word, Google Docs and web pages bring along: scripts, comments, Mso classes,
+   * fonts, margins, event handlers and javascript: links. Structure, classes, links, images and colours stay.
+   */
+  function cleanPastedHtml(html) {
+    const doc = document.implementation.createHTMLDocument('');   // inert: nothing runs, nothing loads
+    doc.body.innerHTML = html;
+    const body = doc.body;
+    body.querySelectorAll(PASTE_DROP).forEach(n => n.remove());
+    const comments = doc.createTreeWalker(body, 128 /* NodeFilter.SHOW_COMMENT */);
+    const found = [];
+    while (comments.nextNode()) found.push(comments.currentNode);
+    found.forEach(n => n.remove());
+    // Google Docs wraps the whole paste in <b style="font-weight:normal">
+    body.querySelectorAll('b[id^="docs-internal-guid"]').forEach(unwrapEl);
+    body.querySelectorAll('font').forEach(unwrapEl);
+    body.querySelectorAll('*').forEach(n => {
+      for (const attr of [...n.attributes]) {
+        const name = attr.name.toLowerCase();
+        if (name.startsWith('on') || name === 'lang' || name === 'id' || name.includes(':')) n.removeAttribute(attr.name);
+        else if ((name === 'href' || name === 'src') && /^\s*(javascript|vbscript):/i.test(attr.value)) n.removeAttribute(attr.name);
+      }
+      if (n.hasAttribute('class')) {
+        const kept = [...n.classList].filter(c => !/^mso/i.test(c));
+        kept.length ? n.setAttribute('class', kept.join(' ')) : n.removeAttribute('class');
+      }
+      if (n.hasAttribute('style')) {
+        const style = n.style;
+        const kept = PASTE_STYLES.map(p => style.getPropertyValue(p) && `${p}: ${style.getPropertyValue(p)}`).filter(Boolean);
+        kept.length ? n.setAttribute('style', kept.join('; ')) : n.removeAttribute('style');
+      }
+    });
+    body.querySelectorAll('span').forEach(n => { if (!n.attributes.length) unwrapEl(n); });
+    return body.innerHTML;
+  }
+
+  function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // =========================================================================
   // PhloxEditor — main class
   // =========================================================================
 
@@ -220,41 +367,58 @@
 
   class PhloxEditor {
 
-    constructor(wrapper) {
+    /**
+     * @param {HTMLElement} wrapper  the element the editor is made in
+     * @param {object} [options]     instead of the data-* attributes EditorInput renders, for editors made
+     *   from JS: name, value, toolbar ('format,lists|link' or [['format', 'lists'], ['link']]), minHeight,
+     *   maxHeight, contentClass, theme ('default' | 'bootstrap' | a class map), colorScheme, uploadUrl,
+     *   upload (file => Promise<url>, instead of uploadUrl), inlineImages (false: an image that cannot be
+     *   uploaded is not inserted as base64), placeholder, variables, variableFormat, widgets, widgetPreviewUrl
+     */
+    constructor(wrapper, options = {}) {
+      const o = options, d = wrapper.dataset;
+      const json = text => (text ? JSON.parse(text) : null);
+      wrapper.dataset.phxEditorInit = '1';   // made: initAll() leaves it alone
+      wrapper.classList.add('phx-editor-wrapper');
       this.w           = wrapper;
-      this.uploadUrl   = wrapper.dataset.uploadUrl || '';
-      this.fieldName   = wrapper.dataset.name || '';
-      this.initValue   = wrapper.dataset.value || '';
+      this.uploadUrl   = o.uploadUrl ?? d.uploadUrl ?? '';
+      this.upload      = o.upload || null;
+      this.inlineImages = o.inlineImages ?? true;
+      this.fieldName   = o.name ?? d.name ?? '';
+      this.initValue   = o.value ?? d.value ?? '';
       // toolbarRows: array of rows, each row is array of group names
       // data-toolbar: rows separated by "|", groups by ","
       // null = show all in single row (default)
-      if (wrapper.dataset.toolbar) {
-        this.toolbarRows = wrapper.dataset.toolbar.split('|').map(
-          row => row.split(',').map(s => s.trim()).filter(Boolean)
-        );
+      const toolbar = o.toolbar ?? d.toolbar;
+      if (toolbar) {
+        this.toolbarRows = typeof toolbar === 'string'
+          ? toolbar.split('|').map(row => row.split(',').map(s => s.trim()).filter(Boolean))
+          : (Array.isArray(toolbar[0]) ? toolbar : [toolbar]);
         this.toolbarGroups = this.toolbarRows.flat();
       } else {
         this.toolbarRows   = null;
         this.toolbarGroups = null;
       }
-      this.minHeight   = parseInt(wrapper.dataset.minHeight, 10) || 300;
-      this.maxHeight   = parseInt(wrapper.dataset.maxHeight, 10) || 700;
-      this.contentClass = wrapper.dataset.contentClass || '';
-      // Theme classes resolved server-side by EditorInput::resolveThemeClasses()
-      this.cls         = wrapper.dataset.theme ? JSON.parse(wrapper.dataset.theme) : {};
+      this.minHeight   = parseInt(o.minHeight ?? d.minHeight, 10) || 300;
+      this.maxHeight   = parseInt(o.maxHeight ?? d.maxHeight, 10) || 700;
+      this.contentClass = o.contentClass ?? d.contentClass ?? '';
+      // Theme classes resolved server-side by EditorInput::resolveThemeClasses(), or a preset name
+      this.cls         = resolveTheme(o.theme ?? json(d.theme));
       this.bs          = this.cls.bsModal === true;
-      const colorScheme = wrapper.dataset.colorScheme || 'light';
+      const colorScheme = o.colorScheme ?? d.colorScheme ?? 'light';
       if (colorScheme !== 'light') wrapper.setAttribute('data-theme', colorScheme);
       // Variables (EditorInput::setVariables()): null = the feature is off,
       // placeholders stay plain text; else they're shown as chips
-      this.variables      = wrapper.dataset.variables ? JSON.parse(wrapper.dataset.variables) : null;
-      this.variableFormat = wrapper.dataset.variableFormat || '{{ %s }}';
+      this.variables      = o.variables ?? json(d.variables);
+      this.variableFormat = o.variableFormat ?? d.variableFormat ?? '{{ %s }}';
       this.variableMap    = new Map((this.variables || []).map(v => [v.ref, v]));
       // Widgets (EditorInput::setWidgets()): null = no picker, placeholders
       // stay as they are; else clicking one asks the application to edit it
-      this.widgets          = wrapper.dataset.widgets ? JSON.parse(wrapper.dataset.widgets) : null;
+      this.widgets          = o.widgets ?? json(d.widgets);
       this.widgetMap        = new Map((this.widgets || []).map(w => [w.type, w]));
-      this.widgetPreviewUrl = wrapper.dataset.widgetPreviewUrl || '';
+      this.widgetPreviewUrl = o.widgetPreviewUrl ?? d.widgetPreviewUrl ?? '';
+      if (this.widgets) wrapper.setAttribute('data-widgets', d.widgets || '');
+      this.placeholder = o.placeholder ?? d.placeholder ?? '';
       this.previewSeq       = 0;
       this.sourceMode  = false;
       this.savedRange  = null;
@@ -292,12 +456,13 @@
       // Editable pane
       const paneCls = this.cls.editor + (this.contentClass ? ' ' + this.contentClass : '');
       this.pane = el('div', { cls: paneCls, contenteditable: 'true' });
+      if (this.placeholder) this.pane.dataset.placeholder = this.placeholder;
       this.pane.style.minHeight = this.minHeight + 'px';
       this.pane.style.maxHeight = this.maxHeight + 'px';
       this.pane.innerHTML = this.initValue;
       this._chipifyVariables();
       // Enter vytváří <p> místo <div>
-      document.execCommand('defaultParagraphSeparator', false, 'p');
+      this._exec('defaultParagraphSeparator', 'p');
       this.w.appendChild(this.pane);
 
       // Source pane
@@ -339,9 +504,10 @@
     _range()             { return document.createRange(); }
     _walker(root, what)  { return document.createTreeWalker(root, what); }
     _sel()               { return window.getSelection(); }
-    _exec(cmd, val)      { return document.execCommand(cmd, false, val !== undefined ? val : null); }
-    _qstate(cmd)         { return document.queryCommandState(cmd); }
-    _qval(cmd)           { return document.queryCommandValue(cmd); }
+    // Optional calls: an environment without execCommand (jsdom in tests of applications) still makes the editor
+    _exec(cmd, val)      { return document.execCommand?.(cmd, false, val !== undefined ? val : null) ?? false; }
+    _qstate(cmd)         { return document.queryCommandState?.(cmd) ?? false; }
+    _qval(cmd)           { return document.queryCommandValue?.(cmd) ?? ''; }
     _saveRange()         { return saveRange(); }
     _restoreRange(r)     { restoreRange(r); }
 
@@ -682,15 +848,13 @@
         this.fullscreenBtn = null;
       }
 
-      // Odstranit trailing separátory a prázdné skupiny z každého řádku
+      // Odstranit prázdné skupiny a separátory na začátku a konci řádku i dva separátory za sebou
+      // (toolbar bez prvních skupin, např. jen format,lists, začínal separátorem)
+      const isSep = n => n.classList?.contains('phx-editor-sep') || n.classList?.contains('vr');
+      tb.querySelectorAll('[data-phx-toolbar-group]').forEach(g => { if (g.childElementCount === 0) g.remove(); });
       tb.querySelectorAll('.phx-editor-toolbar-row').forEach(row => {
-        while (row.lastChild) {
-          const last = row.lastChild;
-          const isSep = last.classList?.contains('phx-editor-sep') || last.classList?.contains('vr');
-          const isEmptyGroup = last.hasAttribute?.('data-phx-toolbar-group') && last.childElementCount === 0;
-          if (!isSep && !isEmptyGroup) break;
-          last.remove();
-        }
+        [...row.children].forEach(n => { if (isSep(n) && (!n.previousElementSibling || isSep(n.previousElementSibling))) n.remove(); });
+        while (row.lastElementChild && isSep(row.lastElementChild)) row.lastElementChild.remove();
       });
 
       return tb;
@@ -751,7 +915,7 @@
         }
       });
 
-      this.srcPane.addEventListener('input', () => { this.input.value = this.srcPane.value; });
+      this.srcPane.addEventListener('input', () => this._store(this.srcPane.value));
 
       // document-level listeners are remembered so destroy() can remove them
       this._docClick = e => {
@@ -783,6 +947,28 @@
     /** The current value becomes the clean one (e.g. after saving via AJAX). */
     markClean() {
       this.initValue = this.input.value;
+    }
+
+    /** The stored HTML, as the form sends it. */
+    getValue() {
+      return this.input.value;
+    }
+
+    /** Puts new content in the editor (the form was reset, a record loaded…); no phx-editor:change event. */
+    setValue(html) {
+      this.pane.innerHTML = html || '';
+      this._chipifyVariables();
+      this._loadWidgetPreviews();
+      this.input.value = this._serialize();
+      if (this.sourceMode) this.srcPane.value = this.input.value;
+    }
+
+    /** Types text at the caret, or where it was when the editor lost focus (an emoji from a menu next to it). */
+    insertText(text) {
+      this.pane.focus();
+      if (this.savedRange && this.pane.contains(this.savedRange.startContainer)) this._restoreRange(this.savedRange);
+      this._exec('insertText', text);
+      this._sync();
     }
 
     /**
@@ -934,7 +1120,7 @@
         if (b) b.classList.toggle('active', a);
       });
       const block = (this._qval('formatBlock') || '').toLowerCase();
-      this.styleSelect.value = block in {'p':1,'h1':1,'h2':1,'h3':1,'h4':1,'h5':1,'h6':1,'blockquote':1,'pre':1} ? block : '';
+      if (this.styleSelect) this.styleSelect.value = block in {'p':1,'h1':1,'h2':1,'h3':1,'h4':1,'h5':1,'h6':1,'blockquote':1,'pre':1} ? block : '';
       const srcBtn = this.toolbar.querySelector('[data-btn-id="source"]');
       if (srcBtn) srcBtn.classList.toggle('active', this.sourceMode);
 
@@ -1007,21 +1193,24 @@
             } catch (_) {}
           }
         }
-        this.input.value = this._serialize();
+        this._store(this._serialize());
       }
+    }
+
+    /** the stored value changed: the form field and a phx-editor:change event (detail.value) on the wrapper */
+    _store(html) {
+      if (this.input.value === html) return;
+      this.input.value = html;
+      this.w.dispatchEvent(new CustomEvent('phx-editor:change', { detail: { value: html } }));
     }
 
     // ── Variables ────────────────────────────────────────────────────────────
 
     /** the pane's HTML as it's stored: variable chips back as plain placeholders, widgets without their previews */
     _serialize() {
-      const chips     = this.variables && this.pane.querySelector('.phx-editor-var');
-      // previews and the editor's own marks (data-phx-*) stay out
-      const previewed = this.pane.querySelector('[data-phx-label], [data-phx-editing], [data-phx-seq]');
-      if (!chips && !previewed) {
-        return this.pane.innerHTML;
-      }
       const clone = this.pane.cloneNode(true);
+      // an image still being uploaded is not part of the value yet
+      clone.querySelectorAll('.phx-editor-img-loading').forEach(n => n.remove());
       clone.querySelectorAll('.phx-editor-var').forEach(chip => {
         chip.replaceWith(document.createTextNode(this._placeholder(chip.dataset.var)));
       });
@@ -1030,7 +1219,7 @@
         [...widget.attributes].filter(a => a.name.startsWith('data-phx-')).forEach(a => widget.removeAttribute(a.name));
         if (widget.getAttribute('style') === '') widget.removeAttribute('style'); // left by the browser
       });
-      return clone.innerHTML;
+      return normalizeHtml(clone).innerHTML;
     }
 
     _placeholder(ref) {
@@ -1794,65 +1983,67 @@
     // ── Image popup ──────────────────────────────────────────────────────────
 
 
-    // ── Paste handler — auto-upload base64 images ────────────────────────────
+    // ── Paste handler — images uploaded, HTML cleaned ─────────────────────────
 
     _handlePaste(e) {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      // Check for image items
-      for (const item of items) {
+      const data = e.clipboardData;
+      if (!data) return;
+      for (const item of data.items || []) {
         if (item.type.startsWith('image/')) {
-          e.preventDefault();
           const file = item.getAsFile();
           if (!file) continue;
-
-          if (this.uploadUrl) {
-            // Upload to server — insert placeholder first
-            const ph = el('span', { cls:'phx-editor-img-loading', html:'⏳ Nahrávám…' });
-            const sel = this._sel();
-            if (sel?.rangeCount) sel.getRangeAt(0).insertNode(ph);
-            this._sync();
-
-            const fd = new FormData();
-            fd.append('file', file);
-            fetch(this.uploadUrl, { method:'POST', body:fd })
-              .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-              .then(data => {
-                if (data.error) throw new Error(data.error);
-                const img = this._makeImg(data.url, '', 'img-fluid');
-                ph.replaceWith(img);
-                this._sync();
-              })
-              .catch(err => {
-                // Fallback: inline as base64, same as the no-uploadUrl branch
-                // below - a blob: URL only lives in this tab's memory for
-                // this session, so it's already dead on the very next
-                // reload (let alone after actually saving the form), unlike
-                // this, which is real, persistable content.
-                const reader = new FileReader();
-                reader.onload = ev => {
-                  const img = this._makeImg(ev.target.result, '', 'img-fluid');
-                  ph.replaceWith(img);
-                  this._sync();
-                };
-                reader.readAsDataURL(file);
-                console.warn('[nwv] Upload failed, inserted as base64:', err.message);
-              });
-          } else {
-            // No upload URL — insert as base64 (user's choice)
-            const reader = new FileReader();
-            reader.onload = ev => {
-              const img = this._makeImg(ev.target.result, '', 'img-fluid');
-              const sel = this._sel();
-              if (sel?.rangeCount) sel.getRangeAt(0).insertNode(img);
-              this._sync();
-            };
-            reader.readAsDataURL(file);
-          }
-          return; // handled
+          e.preventDefault();
+          this._insertImageFile(file, '', 'img-fluid');
+          return;
         }
       }
+      // Word, Google Docs and web pages bring their own fonts, classes and scripts
+      const html = data.getData('text/html');
+      if (html) {
+        e.preventDefault();
+        this._exec('insertHTML', cleanPastedHtml(html));
+        this._sync();
+      }
+    }
+
+    /**
+     * The src for an image file: the application's upload(), else a POST to uploadUrl, else base64. A failed
+     * upload falls back to base64 too, unless inlineImages is off: then null, and no image is inserted.
+     */
+    async _imageSrc(file) {
+      try {
+        if (this.upload) return await this.upload(file);
+        if (this.uploadUrl) {
+          const fd = new FormData();
+          fd.append('file', file);
+          const response = await fetch(this.uploadUrl, { method: 'POST', body: fd });
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          const data = await response.json();
+          if (data.error) throw new Error(data.error);
+          return data.url;
+        }
+      } catch (err) {
+        if (!this.inlineImages) {
+          console.warn('[phx-editor] Upload failed, the image is not inserted:', err?.message);
+          return null;
+        }
+        // a blob: URL would die with the tab; base64 is persistable content
+        console.warn('[phx-editor] Upload failed, inserted as base64:', err?.message);
+      }
+      return this.inlineImages ? readAsDataUrl(file) : null;
+    }
+
+    /** Inserts an image file at the caret: a placeholder while it's uploading, then the image. */
+    _insertImageFile(file, alt, cls) {
+      const ph = el('span', { cls: 'phx-editor-img-loading', html: '⏳ Nahrávám…' });
+      const sel = this._sel();
+      if (sel?.rangeCount && this.pane.contains(sel.getRangeAt(0).startContainer)) sel.getRangeAt(0).insertNode(ph);
+      else this.pane.appendChild(ph);
+      this._imageSrc(file).then(src => {
+        if (src && ph.isConnected) ph.replaceWith(this._makeImg(src, alt, cls));
+        else ph.remove();
+        this._sync();
+      });
     }
 
     // ── Image floating toolbar ───────────────────────────────────────────────
@@ -1992,7 +2183,7 @@
         ],
         confirm: 'Vložit obrázek',
         onConfirm: (vals, popupEl) => {
-          const fileInput = popupEl.querySelector('#img-file');
+          const fileInput = popupEl.querySelector('#phx-editor-img-file');
           const file = fileInput?.files?.[0];
           const url  = vals['img-url'].trim();
           const alt  = vals['img-alt'].trim();
@@ -2004,53 +2195,12 @@
           this._restoreRange(this.savedRange);
 
           if (file) {
-            this._uploadAndInsertImage(file, alt, cls);
+            this._insertImageFile(file, alt, cls);
           } else {
             this._insertImageNode(url, alt, cls);
           }
         }
       });
-    }
-
-    _uploadAndInsertImage(file, alt, cls) {
-      if (!this.uploadUrl) {
-        // No uploadUrl configured at all - same choice _handlePaste() makes
-        // for a paste with no uploadUrl: insert the file inline as base64
-        // rather than refusing to insert anything.
-        const reader = new FileReader();
-        reader.onload = ev => this._insertImageNode(ev.target.result, alt, cls);
-        reader.readAsDataURL(file);
-        return;
-      }
-      // Placeholder
-      const ph = el('span', { cls:'phx-editor-img-loading', html:'⏳ Nahrávám…' });
-      const sel = this._sel();
-      if (sel?.rangeCount) sel.getRangeAt(0).insertNode(ph);
-      this._sync();
-
-      const fd = new FormData();
-      fd.append('file', file);
-
-      fetch(this.uploadUrl, { method:'POST', body:fd })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(data => {
-          if (data.error) throw new Error(data.error);
-          const img = this._makeImg(data.url, alt, cls);
-          ph.replaceWith(img);
-          this._sync();
-        })
-        .catch(err => {
-          // Upload failed - same fallback as _handlePaste(): inline as
-          // base64 rather than dropping the image the user just picked.
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const img = this._makeImg(ev.target.result, alt, cls);
-            ph.replaceWith(img);
-            this._sync();
-          };
-          reader.readAsDataURL(file);
-          console.warn('[nwv] Upload failed, inserted as base64:', err.message);
-        });
     }
 
     _insertImageNode(url, alt, cls) {
@@ -2822,15 +2972,18 @@
     });
   }
 
+  let automatic = true;
+
   // Standard page load
   document.addEventListener('DOMContentLoaded', () => {
+    if (!automatic) return;
     initAll(document);
     if (window.naja) hookNaja(window.naja);
   });
 
   // MutationObserver — catches content injected after load by any AJAX
   // library (htmx, custom…): new editors are created, removed ones destroyed
-  new MutationObserver((mutations) => {
+  const observer = new MutationObserver((mutations) => {
     let removed = false;
     for (const m of mutations) {
       for (const node of m.addedNodes) {
@@ -2839,7 +2992,21 @@
       removed = removed || m.removedNodes.length > 0;
     }
     if (removed && live.size) destroyDetached();
-  }).observe(document.body, { childList: true, subtree: true });
+  });
+  const observe = () => observer.observe(document.body, { childList: true, subtree: true });
+  if (document.body) observe();
+  else document.addEventListener('DOMContentLoaded', () => automatic && observe());
+
+  /**
+   * autoInit(false): editors are made only by new PhloxEditor(wrapper, options) and destroyed by their
+   * destroy() — for applications that render the page themselves (PhloxJS, React…), where watching
+   * every change of the page would be wasted work.
+   */
+  function autoInit(enabled) {
+    automatic = enabled;
+    if (enabled && document.body) observe();
+    else observer.disconnect();
+  }
 
   // Expose for manual use
   global.PhloxEditor = {
@@ -2847,8 +3014,12 @@
     destroy: destroyIn,
     isDirty,
     hookNaja,
+    autoInit,
     PhloxEditor,
     instances,
+    themes: THEMES,
+    normalizeHtml,
+    cleanPastedHtml,
 
     /**
      * Insert a custom widget placeholder into an editor from outside code
