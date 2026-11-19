@@ -32,7 +32,6 @@ class EditorExtension extends CompilerExtension
     {
         Container::extensionMethod(
             'addEditor',
-            // @phpstan-ignore-next-line argument.type (Nette calls this closure with extra args via magic __call)
             static function (
                 Container $container,
                 string $name,

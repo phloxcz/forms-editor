@@ -719,7 +719,6 @@ class EditorInput extends BaseControl
     {
         Container::extensionMethod(
             $method,
-            // @phpstan-ignore-next-line argument.type (Nette calls this closure with extra args via magic __call)
             static function (
                 Container $container,
                 string $name,
