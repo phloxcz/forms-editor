@@ -1,6 +1,6 @@
 {
   "name": "@phloxcz/forms-editor",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "WYSIWYG editor in plain JS: the client part of phloxcz/forms-editor, usable from bundlers as an ES module.",
   "license": "MIT",
   "homepage": "https://github.com/phloxcz/forms-editor",

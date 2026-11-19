@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] – 2026-11-19
+
+### Changed
+- **CI:** `actions/checkout@v7` on Node.js 24 (Node.js 20 is being removed from GitHub runners); the job that notified Packagist on tags is gone, it never ran (the workflow runs on pushes to branches) and Packagist gets new tags by its GitHub hook
+- PHPStan level 8 passes again with nette/forms 3.3.1: two ignores it no longer needs are removed
+
 ## [0.3.0] – 2026-11-19
 
 ### Added
@@ -113,6 +119,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Full demo page (`demo/index.html`)
 - PHP **8.4+**
 
+[0.3.1]: https://github.com/phloxcz/forms-editor/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/phloxcz/forms-editor/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/phloxcz/forms-editor/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/phloxcz/forms-editor/compare/v0.1.10...v0.2.0
