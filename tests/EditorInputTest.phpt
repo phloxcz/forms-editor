@@ -43,9 +43,21 @@ Assert::same('body',           $el->getAttribute('data-name'));
 // ── Test: the floating toolbar is off by default, setFloatingToolbar() turns it on ─
 Assert::null($el->getAttribute('data-floating-toolbar'));
 Assert::same($control, $control->setFloatingToolbar());
-Assert::same('true', $control->getControl()->getAttribute('data-floating-toolbar'));
+Assert::same('top', $control->getControl()->getAttribute('data-floating-toolbar'));
+Assert::null($control->getControl()->getAttribute('data-toolbar-offset'));
+$control->setFloatingToolbar('caret', 70);
+Assert::same('caret', $control->getControl()->getAttribute('data-floating-toolbar'));
+Assert::same(70, $control->getControl()->getAttribute('data-toolbar-offset'));
+Assert::exception(fn() => $control->setFloatingToolbar('left'), \InvalidArgumentException::class);
 $control->setFloatingToolbar(false);
 Assert::null($control->getControl()->getAttribute('data-floating-toolbar'));
+Assert::null($control->getControl()->getAttribute('data-toolbar-offset'));
+
+// ── Test: setAutoHeight() ─────────────────────────────────────────────────
+Assert::null($el->getAttribute('data-auto-height'));
+Assert::same($control, $control->setAutoHeight());
+Assert::same('true', $control->getControl()->getAttribute('data-auto-height'));
+$control->setAutoHeight(false);
 
 // ── Test: no variables → no variable data attributes ──────────────────────
 Assert::null($el->getAttribute('data-variables'));

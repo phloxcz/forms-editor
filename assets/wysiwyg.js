@@ -374,7 +374,9 @@
      *   maxHeight, contentClass, theme ('default' | 'bootstrap' | a class map), colorScheme, uploadUrl,
      *   upload (file => Promise<url>, instead of uploadUrl), inlineImages (false: an image that cannot be
      *   uploaded is not inserted as base64), placeholder, variables, variableFormat, widgets, widgetPreviewUrl,
-     *   floatingToolbar (the toolbar only while the editor has the focus, floating over the page)
+     *   floatingToolbar (the toolbar only while the editor has the focus, floating over the page: true or 'top'
+     *   above the editor and held at toolbarOffset from the top of the window while it is scrolled, 'caret' above
+     *   the line of the caret), toolbarOffset (px, default 8), autoHeight (the editor as high as its content)
      */
     constructor(wrapper, options = {}) {
       const o = options, d = wrapper.dataset;
@@ -400,8 +402,10 @@
         this.toolbarRows   = null;
         this.toolbarGroups = null;
       }
-      this.minHeight   = parseInt(o.minHeight ?? d.minHeight, 10) || 300;
-      this.maxHeight   = parseInt(o.maxHeight ?? d.maxHeight, 10) || 700;
+      // autoHeight: as high as the content, without the default limits (a minHeight given stays)
+      this.autoHeight  = o.autoHeight ?? d.autoHeight === 'true';
+      this.minHeight   = parseInt(o.minHeight ?? d.minHeight, 10) || (this.autoHeight ? 0 : 300);
+      this.maxHeight   = this.autoHeight ? 0 : (parseInt(o.maxHeight ?? d.maxHeight, 10) || 700);
       this.contentClass = o.contentClass ?? d.contentClass ?? '';
       // Theme classes resolved server-side by EditorInput::resolveThemeClasses(), or a preset name
       this.cls         = resolveTheme(o.theme ?? json(d.theme));
@@ -422,8 +426,12 @@
       this.placeholder = o.placeholder ?? d.placeholder ?? '';
       // The toolbar shows only while the editor has the focus, over what is around it (CSS :focus-within),
       // so an editor in a narrow place takes no room for it and its rows need not wrap
-      this.floatingToolbar = o.floatingToolbar ?? d.floatingToolbar === 'true';
-      wrapper.classList.toggle('phx-editor-floating', this.floatingToolbar);
+      // 'top' (true): above the editor, held at toolbarOffset while the editor is scrolled; 'caret': above the caret
+      const floating = o.floatingToolbar ?? d.floatingToolbar ?? false;
+      this.floatingToolbar = floating === true || floating === 'true' || floating === 'top' ? 'top' : floating === 'caret' ? 'caret' : null;
+      this.toolbarOffset = parseInt(o.toolbarOffset ?? d.toolbarOffset, 10) || 8;
+      wrapper.classList.toggle('phx-editor-floating', Boolean(this.floatingToolbar));
+      wrapper.classList.toggle('phx-editor-auto-height', this.autoHeight);
       this.previewSeq       = 0;
       this.sourceMode  = false;
       this.savedRange  = null;
@@ -462,8 +470,7 @@
       const paneCls = this.cls.editor + (this.contentClass ? ' ' + this.contentClass : '');
       this.pane = el('div', { cls: paneCls, contenteditable: 'true' });
       if (this.placeholder) this.pane.dataset.placeholder = this.placeholder;
-      this.pane.style.minHeight = this.minHeight + 'px';
-      this.pane.style.maxHeight = this.maxHeight + 'px';
+      this._applyHeights();
       this.pane.innerHTML = this.initValue;
       this._chipifyVariables();
       // Enter vytváří <p> místo <div>
@@ -505,15 +512,77 @@
       }
     }
 
-    // The floating toolbar above the editor, below it when there is no room above; shifted left so that it
-    // stays in the window (it may be wider than the editor)
+    // The limits of the height of the pane; none in fullscreen, a 0 leaves it to the CSS (none with autoHeight)
+    _applyHeights() {
+      this.pane.style.minHeight = !this.isFullscreen && this.minHeight ? this.minHeight + 'px' : '';
+      this.pane.style.maxHeight = !this.isFullscreen && this.maxHeight ? this.maxHeight + 'px' : '';
+    }
+
+    /**
+     * The floating toolbar, again on every scroll, change of the caret or typing while the editor has the focus:
+     * - 'top': above the editor; when that is above toolbarOffset (the editor is scrolled), held at toolbarOffset
+     *   over the editor while the editor goes on below it; a low editor without room above has it below;
+     * - 'caret': a little above the line of the caret, below that line when there is no room above it.
+     * Shifted left so that it stays in the window (it may be wider than the editor).
+     */
     _placeFloatingToolbar() {
-      const tb = this.toolbar;
-      tb.style.left = '0px';
-      const box = this.w.getBoundingClientRect();
-      tb.classList.toggle('phx-editor-toolbar-below', box.top < tb.offsetHeight + 8);
-      const over = tb.getBoundingClientRect().right - (document.documentElement.clientWidth - 8);
-      if (over > 0) tb.style.left = -Math.min(over, Math.max(0, box.left - 8)) + 'px';
+      if (!this.floatingToolbar || this.isFullscreen) return;
+      const tb = this.toolbar, gap = 6, box = this.w.getBoundingClientRect(), height = tb.offsetHeight;
+      const offset = this.toolbarOffset, above = box.top - height - gap;
+      let top;
+      const caret = this.floatingToolbar === 'caret' ? this._caretRect() : null;
+      if (caret) {
+        top = caret.top - height - gap * 2;
+        if (top < Math.max(offset, above)) top = Math.max(above, offset) <= caret.top - height - gap ? Math.max(above, offset) : caret.bottom + gap * 2;
+      } else if (above >= offset) {
+        top = above;
+      } else if (box.bottom - height - gap > offset + height) {
+        top = Math.min(offset, box.bottom - height - gap);
+      } else {
+        top = box.bottom + gap;
+      }
+      // Held at the top of the window: fixed to the window, so scrolling does not move it before it is placed
+      // again (it would jump); next to the editor or the caret: to the wrapper, so it moves with them
+      const held = Math.abs(top - offset) < 1 && Math.abs(top - above) >= 1;
+      const left = Math.max(8, Math.min(box.left, document.documentElement.clientWidth - 8 - tb.offsetWidth));
+      tb.style.position = held ? 'fixed' : '';
+      tb.style.top = (held ? top : top - box.top) + 'px';
+      tb.style.bottom = 'auto';
+      tb.style.left = (held ? left : left - box.left) + 'px';
+    }
+
+    // Where the caret is in the window; an empty line has no box of its own, then its element
+    _caretRect() {
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return null;
+      const range = sel.getRangeAt(0);
+      if (!this.pane.contains(range.startContainer)) return null;
+      const rect = range.getClientRects()[0];
+      if (rect) return rect;
+      const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+      return node && this.pane.contains(node) ? node.getBoundingClientRect() : null;
+    }
+
+    // While the editor has the focus, the floating toolbar follows scrolling, the caret and the growing content
+    _followToolbar(on) {
+      if (on === Boolean(this._toolbarFollow)) return;
+      if (on) {
+        let frame = 0;
+        const later = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; this._placeFloatingToolbar(); }); };
+        this._toolbarFollow = later;
+        window.addEventListener('scroll', later, true);
+        window.addEventListener('resize', later);
+        document.addEventListener('selectionchange', later);
+        this.pane.addEventListener('input', later);
+        this._placeFloatingToolbar();
+      } else {
+        const later = this._toolbarFollow;
+        window.removeEventListener('scroll', later, true);
+        window.removeEventListener('resize', later);
+        document.removeEventListener('selectionchange', later);
+        this.pane.removeEventListener('input', later);
+        this._toolbarFollow = null;
+      }
     }
 
     _el(tag)             { return document.createElement(tag); }
@@ -907,7 +976,10 @@
     // ── Events ───────────────────────────────────────────────────────────────
 
     _bindEvents() {
-      if (this.floatingToolbar) this.w.addEventListener('focusin', () => this._placeFloatingToolbar());
+      if (this.floatingToolbar) {
+        this.w.addEventListener('focusin', () => this._followToolbar(true));
+        this.w.addEventListener('focusout', e => { if (!this.w.contains(e.relatedTarget)) this._followToolbar(false); });
+      }
       this.pane.addEventListener('input',   () => this._sync());
       this.pane.addEventListener('keyup',   () => this._updateState());
       this.pane.addEventListener('mouseup', () => { this._updateState(); this._checkFloatContext(); });
@@ -1011,6 +1083,7 @@
       this.destroyed = true;
       document.removeEventListener('click', this._docClick);
       document.removeEventListener('keydown', this._docKeydown);
+      this._followToolbar?.(false);
       this._closePopup?.();
       if (this.isFullscreen) document.body.classList.remove('phx-editor-fullscreen-open');
       if (this.fieldName && instances.get(this.fieldName) === this) instances.delete(this.fieldName);
@@ -1931,13 +2004,7 @@
       }
 
       // Remove height constraints in fullscreen, restore after
-      if (this.isFullscreen) {
-        this.pane.style.minHeight = '';
-        this.pane.style.maxHeight = '';
-      } else {
-        this.pane.style.minHeight = this.minHeight + 'px';
-        this.pane.style.maxHeight = this.maxHeight + 'px';
-      }
+      this._applyHeights();
       this.pane.focus();
     }
 

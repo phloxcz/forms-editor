@@ -51,8 +51,8 @@
   flex-direction: column;
 }
 
-/* floatingToolbar: the toolbar only while the editor has the focus, over the page above the editor (below it
-   with .phx-editor-toolbar-below), as wide as its buttons need up to a limit, not as the editor */
+/* floatingToolbar: the toolbar only while the editor has the focus, over the page; wysiwyg.js places it (top),
+   above the editor until then; as wide as its buttons need up to a limit, not as the editor */
 .phx-editor-floating {
   position: relative;
 }
@@ -75,9 +75,11 @@
   box-shadow: 0 6px 20px rgba(0,0,0,0.14);
 }
 
-.phx-editor-floating:not(.phx-editor-fullscreen) > .phx-editor-toolbar-wrap.phx-editor-toolbar-below {
-  top: calc(100% + 6px);
-  bottom: auto;
+/* autoHeight: as high as the content, without the default limits; the page scrolls instead of the editor */
+.phx-editor-auto-height:not(.phx-editor-fullscreen) .phx-editor-editor {
+  min-height: 0;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .phx-editor-floating:not(.phx-editor-fullscreen):focus-within > .phx-editor-toolbar-wrap {

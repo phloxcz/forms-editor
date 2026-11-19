@@ -93,7 +93,8 @@ Všechny settery jsou fluentní (vrací `static`).
 | `setContentClass(string $class): static` | CSS třída aplikovaná na editační plochu, aby zdědila styly obsahu vašeho webu (typografie článků apod.). |
 | `setMinHeight(int $px): static` | Minimální výška editační plochy v px (výchozí `300`). |
 | `setMaxHeight(int $px): static` | Maximální výška editační plochy v px (výchozí `700`). |
-| `setFloatingToolbar(bool $floating = true): static` | Toolbar jen tehdy, když má editor fokus, plovoucí nad stránkou nad editorem. Viz [Plovoucí toolbar](#plovoucí-toolbar). |
+| `setFloatingToolbar(bool\|string $position = true, ?int $offset = null): static` | Toolbar jen tehdy, když má editor fokus, plovoucí nad stránkou: `true`/`'top'` nad editorem (při posouvání drží `$offset` px od horního okraje okna), `'caret'` nad řádkem s kurzorem. Viz [Plovoucí toolbar](#plovoucí-toolbar). |
+| `setAutoHeight(bool $auto = true): static` | Editor vysoký podle obsahu, roste a zmenšuje se, bez výchozí minimální a maximální výšky. |
 | `setToolbar(array ...$rows): static` | Které skupiny toolbaru zobrazit; jedno pole = jeden řádek, více polí = toolbar rozdělený do více řádků. Neplatné skupiny se tiše ignorují. |
 | `setVariables(array $variables, string $format = '{{ %s }}'): static` | Proměnné, které editor nabídne k vložení (skupina `TB_VARIABLES`) — viz [Proměnné](#proměnné). |
 
@@ -315,7 +316,9 @@ const editor = new PhloxEditor(element, {
     placeholder: 'Napište…',
     upload: async file => (await nahraj(file)).url,   // místo uploadUrl
     inlineImages: false,                   // obrázek, který nejde nahrát, se nevloží jako base64
-    floatingToolbar: true,                 // toolbar jen s fokusem, plovoucí nad editorem
+    floatingToolbar: 'top',                // toolbar jen s fokusem, plovoucí nad editorem ('caret': u kurzoru)
+    toolbarOffset: 70,                     // při posouvání se zastaví 70 px od horního okraje okna
+    autoHeight: true,                      // editor vysoký podle obsahu
 });
 
 element.addEventListener('phx-editor:change', e => console.log(e.detail.value));
@@ -331,9 +334,12 @@ Volby mají přednost před `data-*` atributy, které vykresluje `EditorInput`. 
 
 Pro editor v úzkém místě (karta v rozvržení, sloupec), kde by se pevný toolbar zalamoval do mnoha řádků a zabíral místo: `floatingToolbar: true` v JS, `setFloatingToolbar()` v PHP.
 
+- **`'top'` (nebo `true`):** toolbar je nad editorem. Když se editor posune nad okno, toolbar se zastaví `toolbarOffset` px od horního okraje okna (výchozí 8, třeba výška pevné lišty stránky) a drží se přes editor, dokud je editor vidět. Nízký editor bez místa nad sebou ho má pod sebou.
+- **`'caret'`:** toolbar je kousek nad řádkem s kurzorem a jde s ním při psaní, posouvání i změně výběru. Když nad řádkem není místo, je pod ním.
+
 - **Bez fokusu toolbar není vidět.** S fokusem v editoru (CSS `:focus-within`, i na tlačítku nebo výběru toolbaru) se ukáže nad editorem, přes to, co je nad ním, a nezabírá místo v rozvržení.
 - **Šířka podle tlačítek, ne podle editoru,** nejvýš 44rem a šířka okna. V úzkém editoru tak stačí jeden nebo dva řádky.
-- **Drží se v okně:** u pravého okraje se posune doleva. Když nad editorem není místo, je pod ním (třída `phx-editor-toolbar-below`).
+- **Drží se v okně:** u pravého okraje se posune doleva.
 - **Na celou obrazovku** je toolbar pevný jako jindy.
 - Obalu editoru se v tomto režimu ruší `overflow: hidden` (téma Bootstrap z něj dělá `card overflow-hidden`), jinak by toolbar ořízl.
 

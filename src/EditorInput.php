@@ -172,7 +172,10 @@ class EditorInput extends BaseControl
     private int     $minHeight    = 300;
     private int     $maxHeight    = 700;
     private string  $colorScheme  = 'auto';    // 'light' | 'dark' | 'auto'
-    private bool    $floatingToolbar = false;
+    /** null = a fixed toolbar, 'top' or 'caret' = floating, see setFloatingToolbar() */
+    private ?string $floatingToolbar = null;
+    private ?int    $toolbarOffset   = null;
+    private bool    $autoHeight      = false;
     /** @var list<array{ref: string, label: string, group: string}>|null null = no variable support */
     private ?array  $variables    = null;
     private string  $variableFormat = '{{ %s }}';
@@ -379,12 +382,28 @@ class EditorInput extends BaseControl
     }
 
     /**
-     * The toolbar only while the editor has the focus, floating over the page above the editor,
-     * as wide as its buttons need. For editors in narrow places, where a fixed toolbar would wrap.
+     * The toolbar only while the editor has the focus, floating over the page, as wide as its buttons need.
+     * For editors in narrow places, where a fixed toolbar would wrap.
+     *
+     * @param bool|string $position  true or 'top': above the editor, held $offset px from the top of the window
+     *                               while the editor is scrolled; 'caret': a little above the line of the caret;
+     *                               false: the fixed toolbar
+     * @param int|null    $offset    px from the top of the window (default 8), e.g. the height of a fixed bar
      */
-    public function setFloatingToolbar(bool $floating = true): static
+    public function setFloatingToolbar(bool|string $position = true, ?int $offset = null): static
     {
-        $this->floatingToolbar = $floating;
+        if ($position !== true && $position !== false && $position !== 'top' && $position !== 'caret') {
+            throw new \InvalidArgumentException("Floating toolbar is true, false, 'top' or 'caret', '$position' given.");
+        }
+        $this->floatingToolbar = $position === false ? null : ($position === 'caret' ? 'caret' : 'top');
+        $this->toolbarOffset = $offset;
+        return $this;
+    }
+
+    /** The editor as high as its content, growing and shrinking, without the default minimum and maximum height. */
+    public function setAutoHeight(bool $auto = true): static
+    {
+        $this->autoHeight = $auto;
         return $this;
     }
 
@@ -453,7 +472,9 @@ class EditorInput extends BaseControl
             ->data('theme',         json_encode($this->resolveThemeClasses()))
             ->data('min-height',    $this->minHeight)
             ->data('max-height',    $this->maxHeight)
-            ->data('floating-toolbar', $this->floatingToolbar ? 'true' : null)
+            ->data('floating-toolbar', $this->floatingToolbar)
+            ->data('toolbar-offset',   $this->floatingToolbar !== null ? $this->toolbarOffset : null)
+            ->data('auto-height',      $this->autoHeight ? 'true' : null)
             // THEME_BOOTSTRAP/THEME_TAILWIND don't follow the OS scheme (see setColorScheme()) —
             // 'light' here keeps wysiwyg.js from ever touching data-theme (JSON class map) on them,
             // so the dark-mode CSS block (keyed off data-theme="auto"/"dark") never fires there

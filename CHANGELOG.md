@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] – 2026-11-19
+
+### Added
+- **The floating toolbar stays seen while scrolling:** with `floatingToolbar: true` or `'top'` it stops `toolbarOffset` px from the top of the window (default 8, e.g. under a fixed bar of the page) and stays over a tall editor while the editor is seen. `floatingToolbar: 'caret'` keeps it a little above the line of the caret (below it when there is no room). PHP: `setFloatingToolbar('top' | 'caret' | true | false, $offset)`.
+- **`autoHeight`:** the editor as high as its content, growing and shrinking, without the default minimum and maximum height; the page scrolls instead of the editor. PHP: `setAutoHeight()`.
+
 ## [0.3.1] – 2026-11-19
 
 ### Changed
@@ -119,6 +125,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Full demo page (`demo/index.html`)
 - PHP **8.4+**
 
+[0.4.0]: https://github.com/phloxcz/forms-editor/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/phloxcz/forms-editor/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/phloxcz/forms-editor/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/phloxcz/forms-editor/compare/v0.2.0...v0.2.1

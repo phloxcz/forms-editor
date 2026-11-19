@@ -33,8 +33,16 @@ export interface EditorOptions {
   variableFormat?: string;
   widgets?: EditorWidget[] | null;
   widgetPreviewUrl?: string;
-  /** The toolbar only while the editor has the focus, floating over the page above it; for narrow places. */
-  floatingToolbar?: boolean;
+  /**
+   * The toolbar only while the editor has the focus, floating over the page; for narrow places. true or 'top':
+   * above the editor, held at toolbarOffset from the top of the window while the editor is scrolled. 'caret':
+   * a little above the line of the caret.
+   */
+  floatingToolbar?: boolean | 'top' | 'caret';
+  /** How far from the top of the window the floating toolbar stops, in px (default 8), e.g. under a fixed bar. */
+  toolbarOffset?: number;
+  /** The editor as high as its content, growing and shrinking; no default minHeight and maxHeight. */
+  autoHeight?: boolean;
 }
 
 export class PhloxEditor {
