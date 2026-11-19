@@ -373,7 +373,8 @@
      *   from JS: name, value, toolbar ('format,lists|link' or [['format', 'lists'], ['link']]), minHeight,
      *   maxHeight, contentClass, theme ('default' | 'bootstrap' | a class map), colorScheme, uploadUrl,
      *   upload (file => Promise<url>, instead of uploadUrl), inlineImages (false: an image that cannot be
-     *   uploaded is not inserted as base64), placeholder, variables, variableFormat, widgets, widgetPreviewUrl
+     *   uploaded is not inserted as base64), placeholder, variables, variableFormat, widgets, widgetPreviewUrl,
+     *   floatingToolbar (the toolbar only while the editor has the focus, floating over the page)
      */
     constructor(wrapper, options = {}) {
       const o = options, d = wrapper.dataset;
@@ -419,6 +420,10 @@
       this.widgetPreviewUrl = o.widgetPreviewUrl ?? d.widgetPreviewUrl ?? '';
       if (this.widgets) wrapper.setAttribute('data-widgets', d.widgets || '');
       this.placeholder = o.placeholder ?? d.placeholder ?? '';
+      // The toolbar shows only while the editor has the focus, over what is around it (CSS :focus-within),
+      // so an editor in a narrow place takes no room for it and its rows need not wrap
+      this.floatingToolbar = o.floatingToolbar ?? d.floatingToolbar === 'true';
+      wrapper.classList.toggle('phx-editor-floating', this.floatingToolbar);
       this.previewSeq       = 0;
       this.sourceMode  = false;
       this.savedRange  = null;
@@ -498,6 +503,17 @@
         floatEl.style.top  = (rect.bottom + 6) + 'px';
         floatEl.style.left = rect.left + 'px';
       }
+    }
+
+    // The floating toolbar above the editor, below it when there is no room above; shifted left so that it
+    // stays in the window (it may be wider than the editor)
+    _placeFloatingToolbar() {
+      const tb = this.toolbar;
+      tb.style.left = '0px';
+      const box = this.w.getBoundingClientRect();
+      tb.classList.toggle('phx-editor-toolbar-below', box.top < tb.offsetHeight + 8);
+      const over = tb.getBoundingClientRect().right - (document.documentElement.clientWidth - 8);
+      if (over > 0) tb.style.left = -Math.min(over, Math.max(0, box.left - 8)) + 'px';
     }
 
     _el(tag)             { return document.createElement(tag); }
@@ -891,6 +907,7 @@
     // ── Events ───────────────────────────────────────────────────────────────
 
     _bindEvents() {
+      if (this.floatingToolbar) this.w.addEventListener('focusin', () => this._placeFloatingToolbar());
       this.pane.addEventListener('input',   () => this._sync());
       this.pane.addEventListener('keyup',   () => this._updateState());
       this.pane.addEventListener('mouseup', () => { this._updateState(); this._checkFloatContext(); });

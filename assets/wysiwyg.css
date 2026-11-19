@@ -51,6 +51,39 @@
   flex-direction: column;
 }
 
+/* floatingToolbar: the toolbar only while the editor has the focus, over the page above the editor (below it
+   with .phx-editor-toolbar-below), as wide as its buttons need up to a limit, not as the editor */
+.phx-editor-floating {
+  position: relative;
+}
+
+/* The Bootstrap theme makes the wrapper a card with .overflow-hidden (!important), which would cut the toolbar off */
+.phx-editor-wrapper.phx-editor-floating {
+  overflow: visible !important;
+}
+
+.phx-editor-floating:not(.phx-editor-fullscreen) > .phx-editor-toolbar-wrap {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 1050;
+  display: none;
+  width: max-content;
+  max-width: min(44rem, calc(100vw - 16px));
+  border: 1px solid var(--phx-editor-tb-border, rgba(0,0,0,0.12));
+  border-radius: var(--phx-editor-radius, 8px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+}
+
+.phx-editor-floating:not(.phx-editor-fullscreen) > .phx-editor-toolbar-wrap.phx-editor-toolbar-below {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+
+.phx-editor-floating:not(.phx-editor-fullscreen):focus-within > .phx-editor-toolbar-wrap {
+  display: flex;
+}
+
 .phx-editor-toolbar-row {
   display: flex;
   flex-wrap: wrap;

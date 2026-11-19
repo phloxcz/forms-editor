@@ -172,6 +172,7 @@ class EditorInput extends BaseControl
     private int     $minHeight    = 300;
     private int     $maxHeight    = 700;
     private string  $colorScheme  = 'auto';    // 'light' | 'dark' | 'auto'
+    private bool    $floatingToolbar = false;
     /** @var list<array{ref: string, label: string, group: string}>|null null = no variable support */
     private ?array  $variables    = null;
     private string  $variableFormat = '{{ %s }}';
@@ -377,6 +378,16 @@ class EditorInput extends BaseControl
         return $this;
     }
 
+    /**
+     * The toolbar only while the editor has the focus, floating over the page above the editor,
+     * as wide as its buttons need. For editors in narrow places, where a fixed toolbar would wrap.
+     */
+    public function setFloatingToolbar(bool $floating = true): static
+    {
+        $this->floatingToolbar = $floating;
+        return $this;
+    }
+
     /** Set minimum editor height in pixels. */
     public function setMinHeight(int $px): static
     {
@@ -442,6 +453,7 @@ class EditorInput extends BaseControl
             ->data('theme',         json_encode($this->resolveThemeClasses()))
             ->data('min-height',    $this->minHeight)
             ->data('max-height',    $this->maxHeight)
+            ->data('floating-toolbar', $this->floatingToolbar ? 'true' : null)
             // THEME_BOOTSTRAP/THEME_TAILWIND don't follow the OS scheme (see setColorScheme()) —
             // 'light' here keeps wysiwyg.js from ever touching data-theme (JSON class map) on them,
             // so the dark-mode CSS block (keyed off data-theme="auto"/"dark") never fires there

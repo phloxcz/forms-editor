@@ -40,6 +40,13 @@ Assert::same('/editor/upload', $el->getAttribute('data-upload-url'));
 Assert::same('<p>test</p>',    $el->getAttribute('data-value'));
 Assert::same('body',           $el->getAttribute('data-name'));
 
+// ── Test: the floating toolbar is off by default, setFloatingToolbar() turns it on ─
+Assert::null($el->getAttribute('data-floating-toolbar'));
+Assert::same($control, $control->setFloatingToolbar());
+Assert::same('true', $control->getControl()->getAttribute('data-floating-toolbar'));
+$control->setFloatingToolbar(false);
+Assert::null($control->getControl()->getAttribute('data-floating-toolbar'));
+
 // ── Test: no variables → no variable data attributes ──────────────────────
 Assert::null($el->getAttribute('data-variables'));
 Assert::null($el->getAttribute('data-variable-format'));

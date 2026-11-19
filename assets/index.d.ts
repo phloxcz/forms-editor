@@ -33,6 +33,8 @@ export interface EditorOptions {
   variableFormat?: string;
   widgets?: EditorWidget[] | null;
   widgetPreviewUrl?: string;
+  /** The toolbar only while the editor has the focus, floating over the page above it; for narrow places. */
+  floatingToolbar?: boolean;
 }
 
 export class PhloxEditor {
